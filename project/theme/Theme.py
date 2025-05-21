@@ -1,0 +1,53 @@
+from dearpygui import dearpygui as dpg
+
+def create_theme():
+    with dpg.theme(tag="base"):
+        with dpg.theme_component():
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (130, 142, 250))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (137, 142, 255, 95))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (137, 130, 255))
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 3)
+            dpg.add_theme_style(dpg.mvStyleVar_ChildRounding, 4)
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 2, 2)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowRounding, 4, 4)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowTitleAlign, 0.50, 0.50)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowBorderSize, 0)
+            dpg.add_theme_style(dpg.mvStyleVar_ChildBorderSize, 0)
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 10, 14)
+            dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (25, 25, 25))
+            dpg.add_theme_color(dpg.mvThemeCol_Border, (0, 0, 0, 0))
+            dpg.add_theme_color(dpg.mvThemeCol_ScrollbarBg, (0, 0, 0, 0))
+            dpg.add_theme_color(dpg.mvThemeCol_TitleBgActive, (130, 142, 250))
+            dpg.add_theme_color(dpg.mvThemeCol_CheckMark, (221, 166, 185))
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (172, 174, 197))
+
+    with dpg.theme(tag="slider_thin"):
+        with dpg.theme_component():
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (130, 142, 250, 99))
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (130, 142, 250, 99))
+            dpg.add_theme_color(dpg.mvThemeCol_SliderGrabActive, (255, 255, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_SliderGrab, (255, 255, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (130, 142, 250, 99))
+            dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 3)
+            dpg.add_theme_style(dpg.mvStyleVar_GrabMinSize, 30)
+
+    with dpg.theme(tag="slider"):
+        with dpg.theme_component():
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBgActive, (130, 142, 250, 99))
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBgHovered, (130, 142, 250, 99))
+            dpg.add_theme_color(dpg.mvThemeCol_SliderGrabActive, (255, 255, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_SliderGrab, (255, 255, 255))
+            dpg.add_theme_color(dpg.mvThemeCol_FrameBg, (130, 142, 250, 99))
+            dpg.add_theme_style(dpg.mvStyleVar_GrabRounding, 3)
+            dpg.add_theme_style(dpg.mvStyleVar_GrabMinSize, 30)
+
+    with dpg.theme(tag="songs"):
+        with dpg.theme_component():
+            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 0)
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (89, 89, 144, 40))
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (100, 100, 100, 100))
+            dpg.add_theme_style(dpg.mvStyleVar_ButtonTextAlign, 0)
+
+    with dpg.theme(tag="folder_list_button"):
+        with dpg.theme_component():
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (100, 100, 100))

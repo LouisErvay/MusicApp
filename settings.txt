@@ -1,0 +1,6 @@
+path=\Users\enjul\Music\MUSIC
+theme=Xo
+playlist_preload_scroll=
+
+C:\Users\enjul\Music\MUSIC
+C:\Users\enjul\Documents\workspace\PYTHON\05_MusicApp\MUSIC
