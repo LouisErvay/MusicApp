@@ -1,4 +1,5 @@
 import dearpygui.dearpygui as dpg
+from typing import List, Optional, Callable
 import random
 
 class SongList:
@@ -6,8 +7,10 @@ class SongList:
         self.db_handler = db_handler
         self.current_song_list = []
         self._filter_table_id = "song_table"
+        self.play_song = None
 
     def create(self):
+        """Crée l'interface de la liste des chansons."""
         with dpg.child_window(autosize_x=True, delay_search=True, tag="center_main"):
             with dpg.tab_bar():
                 with dpg.tab(label="Songs", tag="song_list_tab"):
@@ -21,11 +24,18 @@ class SongList:
                         self.increment_song_list()
 
     def update_search(self, sender=None, app_data=None, user_data=None):
+        """Met à jour la recherche dans la liste des chansons."""
         dpg.set_value(self._filter_table_id, dpg.get_value("song_search"))
 
-    def increment_song_list(self, data=None):
+    def increment_song_list(self, data: Optional[List] = None):
+        """
+        Met à jour la liste des chansons.
+        
+        Args:
+            data (Optional[List]): Données des chansons à afficher
+        """
         if data is None:
-            data = self.db_handler.get_all_song()
+            data = self.db_handler.get_all_songs()
 
         dpg.delete_item("list", children_only=True)
         self.current_song_list = []
@@ -64,6 +74,7 @@ class SongList:
             return random.choice(self.current_song_list)
         return None
 
-    def checkall(self, sender, app_data, user_data):
-        for song in self.current_song_list:
-            dpg.configure_item(f"checkbox_{song[0]}", default_value=True if app_data is True else False) 
+    def checkall(self, sender, app_data):
+        """Coche ou décoche toutes les chansons."""
+        for song in self.db_handler.get_all_songs():
+            dpg.set_value(f"checkbox_{song[0]}", app_data) 

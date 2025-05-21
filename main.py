@@ -1,17 +1,23 @@
 import dearpygui.dearpygui as dpg
 import pygame
+import os
+from dotenv import load_dotenv
 from src.components.player import MusicPlayer
 from src.components.song_list import SongList
 from src.components.filters import Filters
 from src.components.search_bar import SearchBar
 from src.theme.theme import create_theme, apply_themes
-from project.Settings import Settings
-import project.Db_handler as dbh
+from src.db.db_handler import DbHandler
 
 def main():
-    # Initialisation des paramètres et de la base de données
-    settings = Settings()
-    db_handler = dbh.Db_handler()
+    # Chargement des variables d'environnement
+    load_dotenv()
+    music_folder_path = os.getenv('SONG_FOLDER_PATH')
+    if not music_folder_path:
+        raise ValueError("La variable d'environnement SONG_FOLDER_PATH n'est pas définie")
+
+    # Initialisation de la base de données
+    db_handler = DbHandler(music_folder_path)
 
     # Initialisation de pygame pour la lecture audio
     pygame.mixer.init()
