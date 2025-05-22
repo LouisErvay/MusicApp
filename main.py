@@ -27,13 +27,13 @@ def main():
 
     # Création du contexte DearPyGui
     dpg.create_context()
-    dpg.create_viewport(title="Rainy Music", large_icon="icon.ico", small_icon="icon.ico")
+    dpg.create_viewport(title="MusicApp", large_icon="icon.ico", small_icon="icon.ico")
 
     # Création des thèmes
     create_theme()
 
     # Création de la fenêtre principale
-    with dpg.window(label="Rainy Music", tag="Primary Window"):
+    with dpg.window(label="MusicApp", tag="Primary Window"):
         # Initialisation des composants
         player = MusicPlayer()
         song_list = SongList(db_handler)
@@ -43,6 +43,7 @@ def main():
 
         # Connexion des composants
         song_list.play_song = player.play
+        player.song_list = song_list
         song_list.filters = filters
         filters.increment_song_list = song_list.increment_song_list
         search_bar.song_list = song_list
@@ -51,7 +52,6 @@ def main():
         with dpg.group(horizontal=True):
             # Panneau de gauche (filtres)
             with dpg.child_window(width=250, tag="filters_panel"):
-                functions.create()
                 filters.create()
 
             # Panneau central (lecteur et liste des chansons)
@@ -67,9 +67,9 @@ def main():
                 # Liste des chansons
                 song_list.create()
 
-            # Panneau de droite (vide pour l'instant)
+            # Panneau de droite (fonctions)
             with dpg.child_window(border=True, tag="right_panel"):
-                pass
+                functions.create()
 
         # Chargement initial de la liste des chansons
         song_list.increment_song_list()

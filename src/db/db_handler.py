@@ -492,4 +492,44 @@ class DbHandler:
             cursor.execute("DELETE FROM folder WHERE parent_id = ?", (folder_id,))
             # Supprime le dossier lui-même
             cursor.execute("DELETE FROM folder WHERE id = ?", (folder_id,))
-            conn.commit() 
+            conn.commit()
+
+    def tag_exists(self, tag_name: str) -> bool:
+        """
+        Vérifie si un tag existe déjà dans la base de données.
+        
+        Args:
+            tag_name (str): Nom du tag à vérifier
+            
+        Returns:
+            bool: True si le tag existe, False sinon
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM tag WHERE name = ?", (tag_name,))
+            return cursor.fetchone() is not None
+
+    def delete_tag_by_name(self, tag_name: str) -> bool:
+        """
+        Supprime un tag et ses associations par son nom.
+        
+        Args:
+            tag_name (str): Nom du tag à supprimer
+            
+        Returns:
+            bool: True si le tag a été supprimé, False s'il n'existe pas
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            # Récupérer l'ID du tag
+            cursor.execute("SELECT id FROM tag WHERE name = ?", (tag_name,))
+            tag = cursor.fetchone()
+            if not tag:
+                return False
+
+            # Supprimer les associations du tag avec les chansons
+            cursor.execute("DELETE FROM song_tag WHERE tag_id = ?", (tag[0],))
+            # Supprimer le tag
+            cursor.execute("DELETE FROM tag WHERE id = ?", (tag[0],))
+            conn.commit()
+            return True 

@@ -9,6 +9,7 @@ class SongList:
         self._filter_table_id = "song_table"
         self.play_song = None
         self.filters = None  # Sera défini lors de la connexion des composants
+        self.music_folder_path = db_handler.root_folder  # Correction pour utiliser root_folder
 
     def create(self):
         """Crée l'interface de la liste des chansons."""
@@ -54,10 +55,12 @@ class SongList:
             dpg.add_table_column(label="Folder", width_fixed=True, init_width_or_weight=200)
 
             for song in data:
+                # Le chemin est déjà complet dans la base de données
                 self.current_song_list.append(song)
+                
                 with dpg.table_row(tag=f"row_{song[0]}", filter_key=f"{song[0]}{song[1]}"):
                     dpg.add_checkbox(tag=f"checkbox_{song[0]}")
-                    dpg.add_button(label="Play", width=50, callback=self.play_song,
+                    dpg.add_button(label="Play", width=50, callback=self._play_song,
                                  height=24, user_data=song)
                     dpg.add_text(f"{song[0]}")
                     dpg.add_text(f"{song[1]}")
@@ -66,9 +69,10 @@ class SongList:
         if len(dpg.get_value("song_search")) > 0:
             self.update_search()
 
-    def play_song(self, sender, app_data, user_data):
-        # Cette méthode sera connectée au MusicPlayer
-        pass
+    def _play_song(self, sender, app_data, user_data):
+        """Méthode interne pour jouer une chanson."""
+        if self.play_song:
+            self.play_song(user_data)
 
     def get_random_song(self):
         if self.current_song_list:

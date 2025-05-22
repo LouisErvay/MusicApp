@@ -9,9 +9,9 @@ class Filters:
     def create(self):
         """Creates the filters interface."""
         dpg.add_spacer(height=5)
-        dpg.add_text("Filters")
-        dpg.add_spacer(height=5)
-        dpg.add_separator()
+        with dpg.group(horizontal=True):
+            dpg.add_spacer(width=75)  # Pour centrer le titre
+            dpg.add_text("Filters")
         dpg.add_spacer(height=5)
 
         # Search section
