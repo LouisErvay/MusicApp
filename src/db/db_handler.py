@@ -316,6 +316,7 @@ class DbHandler:
             cursor = conn.cursor()
             folder_placeholders = ','.join('?' * len(folder_ids))
             tag_placeholders = ','.join('?' * len(tag_ids))
+            
             cursor.execute(f"""
                 SELECT 
                     s.id,
@@ -324,13 +325,16 @@ class DbHandler:
                     s.parent_id,
                     f.name as folder_name
                 FROM song s
-                JOIN folder f ON s.parent_id = f.id
-                JOIN song_tag st ON s.id = st.song_id
+                LEFT JOIN song_tag AS specific_tag ON s.id = specific_tag.song_id
+                AND specific_tag.tag_id IN ({tag_placeholders})
+                LEFT JOIN song_tag ON s.id = song_tag.song_id
+                LEFT JOIN tag ON song_tag.tag_id = tag.id
+                INNER JOIN folder f ON s.parent_id = f.id
                 WHERE s.parent_id IN ({folder_placeholders})
-                AND st.tag_id IN ({tag_placeholders})
+                AND specific_tag.tag_id IS NOT NULL
                 GROUP BY s.id
                 ORDER BY s.name
-            """, folder_ids + tag_ids)
+            """, tag_ids + folder_ids)
             return cursor.fetchall()
 
     def get_all_folders(self) -> List[Tuple]:
@@ -532,4 +536,45 @@ class DbHandler:
             # Supprimer le tag
             cursor.execute("DELETE FROM tag WHERE id = ?", (tag[0],))
             conn.commit()
-            return True 
+            return True
+
+    def get_song_tags(self, song_id: int) -> List[Tuple]:
+        """
+        Récupère tous les tags d'une chanson.
+        
+        Args:
+            song_id (int): ID de la chanson
+            
+        Returns:
+            List[Tuple]: Liste des tags (id, name) de la chanson
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT t.id, t.name
+                FROM tag t
+                JOIN song_tag st ON t.id = st.tag_id
+                WHERE st.song_id = ?
+                ORDER BY t.name
+            """, (song_id,))
+            return cursor.fetchall()
+
+    def update_song_tags(self, song_id: int, tag_ids: List[int]) -> None:
+        """
+        Met à jour les tags d'une chanson.
+        
+        Args:
+            song_id (int): ID de la chanson
+            tag_ids (List[int]): Liste des IDs des tags à associer à la chanson
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            # Supprimer toutes les associations existantes
+            cursor.execute("DELETE FROM song_tag WHERE song_id = ?", (song_id,))
+            # Ajouter les nouvelles associations
+            for tag_id in tag_ids:
+                cursor.execute(
+                    "INSERT INTO song_tag (song_id, tag_id) VALUES (?, ?)",
+                    (song_id, tag_id)
+                )
+            conn.commit() 

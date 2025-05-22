@@ -28,7 +28,7 @@ class Filters:
         with dpg.child_window(tag="filters"):
             self.increment_filter()
 
-    def get_item_list(self, item_type: str) -> str:
+    def get_item_list(self, item_type: str) -> List[int]:
         """
         Gets the list of selected items.
         
@@ -36,43 +36,26 @@ class Filters:
             item_type (str): Type of item ('folder_list' or 'tag_list')
             
         Returns:
-            str: List of IDs in SQL format (ex: "(1,2,3)")
+            List[int]: List of selected item IDs
         """
-        item_list = ""
+        selected_ids = []
         for item in dpg.get_item_children(item_type)[1]:
             if dpg.get_value(item):
-                if len(item_list) == 0:
-                    item_list = "(" + str(dpg.get_item_user_data(item)[0]) + ","
-                else:
-                    item_list += str(dpg.get_item_user_data(item)[0]) + ","
-        if len(item_list) > 0:
-            item_list = item_list[:-1] + ")"
-        return item_list
+                selected_ids.append(dpg.get_item_user_data(item)[0])
+        return selected_ids
 
     def increment_song_from_filter(self, sender, app_data):
         """Updates the song list based on selected filters."""
-        folder_list = self.get_item_list("folder_list")
-        tag_list = self.get_item_list("tag_list")
+        folder_ids = self.get_item_list("folder_list")
+        tag_ids = self.get_item_list("tag_list")
 
-        if not folder_list and not tag_list:
+        if not folder_ids and not tag_ids:
             self.increment_song_list()
-        elif not folder_list:
-            tag_ids = eval(tag_list)
-            if isinstance(tag_ids, int):
-                tag_ids = [tag_ids]
+        elif not folder_ids:
             self.increment_song_list(data=self.db_handler.get_songs_by_tag(tag_ids))
-        elif not tag_list:
-            folder_ids = eval(folder_list)
-            if isinstance(folder_ids, int):
-                folder_ids = [folder_ids]
+        elif not tag_ids:
             self.increment_song_list(data=self.db_handler.get_songs_by_folder(folder_ids))
         else:
-            folder_ids = eval(folder_list)
-            tag_ids = eval(tag_list)
-            if isinstance(folder_ids, int):
-                folder_ids = [folder_ids]
-            if isinstance(tag_ids, int):
-                tag_ids = [tag_ids]
             self.increment_song_list(data=self.db_handler.get_songs_by_folder_and_tag(
                 folder_ids, tag_ids
             ))
