@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from src.components.player import MusicPlayer
 from src.components.song_list import SongList
 from src.components.filters import Filters
+from src.components.functions import Functions
 from src.components.search_bar import SearchBar
 from src.theme.theme import create_theme, apply_themes
 from src.db.db_handler import DbHandler
@@ -37,10 +38,12 @@ def main():
         player = MusicPlayer()
         song_list = SongList(db_handler)
         filters = Filters(db_handler)
+        functions = Functions(song_list)
         search_bar = SearchBar(song_list)
 
         # Connexion des composants
         song_list.play_song = player.play
+        song_list.filters = filters
         filters.increment_song_list = song_list.increment_song_list
         search_bar.song_list = song_list
 
@@ -48,6 +51,7 @@ def main():
         with dpg.group(horizontal=True):
             # Panneau de gauche (filtres)
             with dpg.child_window(width=250, tag="filters_panel"):
+                functions.create()
                 filters.create()
 
             # Panneau central (lecteur et liste des chansons)

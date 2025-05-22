@@ -40,10 +40,6 @@ class MusicPlayer:
                 with dpg.group(horizontal=True):
                     dpg.add_text("Tags: ", tag="stag")
 
-            dpg.add_spacer(height=1)
-            dpg.add_separator()
-            dpg.add_spacer(height=1)
-
     def update_volume(self, sender, app_data):
         pygame.mixer.music.set_volume(app_data / 100.0)
 

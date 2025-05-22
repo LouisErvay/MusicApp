@@ -257,9 +257,6 @@ class DbHandler:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            # Convertir en liste si c'est un tuple
-            if isinstance(folder_ids, tuple):
-                folder_ids = list(folder_ids)
             placeholders = ','.join('?' * len(folder_ids))
             cursor.execute(f"""
                 SELECT 
@@ -294,13 +291,11 @@ class DbHandler:
                     s.name,
                     s.path,
                     s.parent_id,
-                    f.name as folder_name,
-                    GROUP_CONCAT(t.name) as tags
+                    f.name as folder_name
                 FROM song s
                 JOIN folder f ON s.parent_id = f.id
                 JOIN song_tag st ON s.id = st.song_id
-                JOIN tag t ON st.tag_id = t.id
-                WHERE t.id IN ({placeholders})
+                WHERE st.tag_id IN ({placeholders})
                 GROUP BY s.id
                 ORDER BY s.name
             """, tag_ids)
@@ -327,14 +322,12 @@ class DbHandler:
                     s.name,
                     s.path,
                     s.parent_id,
-                    f.name as folder_name,
-                    GROUP_CONCAT(t.name) as tags
+                    f.name as folder_name
                 FROM song s
                 JOIN folder f ON s.parent_id = f.id
                 JOIN song_tag st ON s.id = st.song_id
-                JOIN tag t ON st.tag_id = t.id
                 WHERE s.parent_id IN ({folder_placeholders})
-                AND t.id IN ({tag_placeholders})
+                AND st.tag_id IN ({tag_placeholders})
                 GROUP BY s.id
                 ORDER BY s.name
             """, folder_ids + tag_ids)

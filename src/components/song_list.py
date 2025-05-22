@@ -8,6 +8,7 @@ class SongList:
         self.current_song_list = []
         self._filter_table_id = "song_table"
         self.play_song = None
+        self.filters = None  # Sera défini lors de la connexion des composants
 
     def create(self):
         """Crée l'interface de la liste des chansons."""
@@ -77,4 +78,9 @@ class SongList:
     def checkall(self, sender, app_data):
         """Coche ou décoche toutes les chansons."""
         for song in self.db_handler.get_all_songs():
-            dpg.set_value(f"checkbox_{song[0]}", app_data) 
+            dpg.set_value(f"checkbox_{song[0]}", app_data)
+
+    def clear_list(self):
+        """Clears the song list."""
+        dpg.delete_item("list", children_only=True)
+        self.current_song_list = [] 
