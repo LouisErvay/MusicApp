@@ -7,6 +7,7 @@ from src.components.song_list import SongList
 from src.components.filters import Filters
 from src.components.functions import Functions
 from src.components.search_bar import SearchBar
+from src.components.remote import Remote
 from src.db.local.local_db import LocalDb
 
 def main():
@@ -30,6 +31,7 @@ def main():
     filters = Filters(local_db)
     functions = Functions(song_list)
     search_bar = SearchBar(song_list)
+    remote = Remote()
 
     # Connexion des composants
     song_list.play_song = player.play
@@ -40,7 +42,7 @@ def main():
 
     # Création et lancement de l'application
     app = App(player=player, song_list=song_list, filters=filters, 
-              functions=functions, search_bar=search_bar)
+              functions=functions, search_bar=search_bar, remote=remote)
     
     # Création de l'interface et lancement
     app.create_ui()

@@ -2,12 +2,13 @@ import dearpygui.dearpygui as dpg
 from src.theme.theme import create_theme, apply_themes
 
 class App:
-    def __init__(self, player=None, song_list=None, filters=None, functions=None, search_bar=None):
+    def __init__(self, player=None, song_list=None, filters=None, functions=None, search_bar=None, remote=None):
         self.player = player
         self.song_list = song_list
         self.filters = filters
         self.functions = functions
         self.search_bar = search_bar
+        self.remote = remote
 
     def create_ui(self):
         """Crée l'interface utilisateur principale."""
@@ -44,6 +45,10 @@ class App:
                             with dpg.tab(label="Songs", tag="song_list_tab"):
                                 if self.song_list:
                                     self.song_list.create()
+                            
+                            with dpg.tab(label="Remote", tag="remote_tab"):
+                                if self.remote:
+                                    self.remote.create()
 
                 # Panneau de droite (fonctions)
                 with dpg.child_window(border=True, tag="right_panel"):
