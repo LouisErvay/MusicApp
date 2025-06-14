@@ -3,7 +3,7 @@ import dearpygui.dearpygui as dpg
 class Functions:
     def __init__(self, song_list):
         self.song_list = song_list
-        self.db_handler = song_list.db_handler
+        self.local_db = song_list.local_db
 
     def show_message(self, message: str, is_error: bool = False):
         """Affiche un message dans un texte avec une couleur appropriée."""
@@ -57,12 +57,12 @@ class Functions:
             tag_ids = eval(tag_list)
             if isinstance(tag_ids, int):
                 tag_ids = [tag_ids]
-            self.song_list.increment_song_list(data=self.song_list.db_handler.get_songs_by_tag(tag_ids))
+            self.song_list.increment_song_list(data=self.song_list.local_db.get_songs_by_tag(tag_ids))
         elif not tag_list:
             folder_ids = eval(folder_list)
             if isinstance(folder_ids, int):
                 folder_ids = [folder_ids]
-            self.song_list.increment_song_list(data=self.song_list.db_handler.get_songs_by_folder(folder_ids))
+            self.song_list.increment_song_list(data=self.song_list.local_db.get_songs_by_folder(folder_ids))
         else:
             folder_ids = eval(folder_list)
             tag_ids = eval(tag_list)
@@ -70,7 +70,7 @@ class Functions:
                 folder_ids = [folder_ids]
             if isinstance(tag_ids, int):
                 tag_ids = [tag_ids]
-            self.song_list.increment_song_list(data=self.song_list.db_handler.get_songs_by_folder_and_tag(
+            self.song_list.increment_song_list(data=self.song_list.local_db.get_songs_by_folder_and_tag(
                 folder_ids, tag_ids
             ))
 
@@ -82,11 +82,11 @@ class Functions:
             return
 
         try:
-            if self.db_handler.tag_exists(tag_name):
+            if self.local_db.tag_exists(tag_name):
                 self.show_message(f"Tag '{tag_name}' already exists", True)
                 return
 
-            self.db_handler.add_tag(tag_name)
+            self.local_db.add_tag(tag_name)
             self.show_message(f"Tag '{tag_name}' added successfully")
             dpg.set_value("tag_input", "")  # Clear input
             # Recharger les filtres pour mettre à jour la liste des tags
@@ -102,7 +102,7 @@ class Functions:
             return
 
         try:
-            if not self.db_handler.delete_tag_by_name(tag_name):
+            if not self.local_db.delete_tag_by_name(tag_name):
                 self.show_message(f"Tag '{tag_name}' not found in database", True)
                 return
 

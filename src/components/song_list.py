@@ -3,28 +3,25 @@ from typing import List, Optional, Callable, Dict
 import random
 
 class SongList:
-    def __init__(self, db_handler):
-        self.db_handler = db_handler
+    def __init__(self, local_db):
+        self.local_db = local_db
         self.current_song_list = []
         self._filter_table_id = "song_table"
         self.play_song = None
         self.filters = None  # Sera défini lors de la connexion des composants
-        self.music_folder_path = db_handler.root_folder
+        self.music_folder_path = local_db.root_folder
         self.tag_popup_state = {}  # Pour stocker l'état des checkboxes
 
     def create(self):
         """Crée l'interface de la liste des chansons."""
-        with dpg.child_window(autosize_x=True, delay_search=True, tag="center_main"):
-            with dpg.tab_bar():
-                with dpg.tab(label="Songs", tag="song_list_tab"):
-                    with dpg.group(horizontal=True):
-                        dpg.add_checkbox(label="", callback=self.checkall)
-                        dpg.add_input_text(hint="Search for a song", width=-1, 
-                                         user_data=self._filter_table_id,
-                                         callback=self.update_search, tag="song_search")
+        with dpg.group(horizontal=True):
+            dpg.add_checkbox(label="", callback=self.checkall)
+            dpg.add_input_text(hint="Search for a song", width=-1, 
+                             user_data=self._filter_table_id,
+                             callback=self.update_search, tag="song_search")
 
-                    with dpg.child_window(autosize_x=True, delay_search=True, tag="list"):
-                        self.increment_song_list()
+        with dpg.child_window(autosize_x=True, delay_search=True, tag="list"):
+            self.increment_song_list()
 
     def update_search(self, sender=None, app_data=None, user_data=None):
         """Met à jour la recherche dans la liste des chansons."""
@@ -33,9 +30,9 @@ class SongList:
     def show_tag_popup(self, song_id: int):
         """Affiche la popup de gestion des tags pour une chanson."""
         # Récupérer les tags actuels de la chanson
-        current_tags = {tag[0]: True for tag in self.db_handler.get_song_tags(song_id)}
+        current_tags = {tag[0]: True for tag in self.local_db.get_song_tags(song_id)}
         # Initialiser l'état des checkboxes
-        self.tag_popup_state = {tag[0]: tag[0] in current_tags for tag in self.db_handler.get_all_tags()}
+        self.tag_popup_state = {tag[0]: tag[0] in current_tags for tag in self.local_db.get_all_tags()}
         
         # Récupérer le nom de la chanson
         song_name = next((song[1] for song in self.current_song_list if song[0] == song_id), f"Song #{song_id}")
@@ -56,7 +53,7 @@ class SongList:
                        tag=f"tag_popup_{song_id}"):
             # Liste des tags avec checkboxes dans un groupe scrollable
             with dpg.child_window(height=200, width=-1):  # Hauteur fixe, largeur adaptative
-                for tag_id, tag_name in self.db_handler.get_all_tags():
+                for tag_id, tag_name in self.local_db.get_all_tags():
                     dpg.add_checkbox(
                         label=tag_name,
                         default_value=self.tag_popup_state[tag_id],
@@ -92,7 +89,7 @@ class SongList:
             # Récupérer les IDs des tags cochés
             selected_tag_ids = [tag_id for tag_id, is_checked in self.tag_popup_state.items() if is_checked]
             # Mettre à jour la base de données
-            self.db_handler.update_song_tags(song_id, selected_tag_ids)
+            self.local_db.update_song_tags(song_id, selected_tag_ids)
             # Afficher le message de succès en vert
             dpg.configure_item(f"tag_status_{song_id}", default_value="Tags updated successfully", color=[0, 255, 0])
         except Exception as e:
@@ -107,7 +104,7 @@ class SongList:
             data (Optional[List]): Données des chansons à afficher
         """
         if data is None:
-            data = self.db_handler.get_all_songs()
+            data = self.local_db.get_all_songs()
 
         dpg.delete_item("list", children_only=True)
         self.current_song_list = []
@@ -154,7 +151,7 @@ class SongList:
 
     def checkall(self, sender, app_data):
         """Coche ou décoche toutes les chansons."""
-        for song in self.db_handler.get_all_songs():
+        for song in self.local_db.get_all_songs():
             dpg.set_value(f"checkbox_{song[0]}", app_data)
 
     def clear_list(self):

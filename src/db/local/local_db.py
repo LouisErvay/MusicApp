@@ -4,7 +4,7 @@ from typing import List, Tuple, Optional, Dict, Any
 from src.objects.folder import LocalFolder, DriveFolder
 from src.objects.song import Song
 
-class DbHandler:
+class LocalDb:
     def __init__(self, root_folder: str):
         """
         Initialise le gestionnaire de base de données.
@@ -12,7 +12,7 @@ class DbHandler:
         Args:
             root_folder (str): Chemin vers le dossier racine contenant les musiques
         """
-        print("\n=== Initialisation de DbHandler ===")
+        print("\n=== Initialisation de LocalDb ===")
         print(f"Dossier racine: {root_folder}")
         self.root_folder = root_folder
         self.db_path = os.path.join(root_folder, "MusicApp_database.db")

@@ -2,8 +2,8 @@ import dearpygui.dearpygui as dpg
 from typing import List, Optional
 
 class Filters:
-    def __init__(self, db_handler):
-        self.db_handler = db_handler
+    def __init__(self, local_db):
+        self.local_db = local_db
         self.increment_song_list = None
 
     def create(self):
@@ -52,11 +52,11 @@ class Filters:
         if not folder_ids and not tag_ids:
             self.increment_song_list()
         elif not folder_ids:
-            self.increment_song_list(data=self.db_handler.get_songs_by_tag(tag_ids))
+            self.increment_song_list(data=self.local_db.get_songs_by_tag(tag_ids))
         elif not tag_ids:
-            self.increment_song_list(data=self.db_handler.get_songs_by_folder(folder_ids))
+            self.increment_song_list(data=self.local_db.get_songs_by_folder(folder_ids))
         else:
-            self.increment_song_list(data=self.db_handler.get_songs_by_folder_and_tag(
+            self.increment_song_list(data=self.local_db.get_songs_by_folder_and_tag(
                 folder_ids, tag_ids
             ))
 
@@ -73,7 +73,7 @@ class Filters:
     def filter_search(self, sender, app_data):
         """Filters folders and tags based on search."""
         # Update folders
-        folders = self.db_handler.get_all_folders()
+        folders = self.local_db.get_all_folders()
         dpg.delete_item("folder_list", children_only=True)
         for folder in folders:
             if app_data.lower() in folder[1].lower():  # Search in folder name
@@ -85,7 +85,7 @@ class Filters:
                 )
 
         # Update tags
-        tags = self.db_handler.get_all_tags()
+        tags = self.local_db.get_all_tags()
         dpg.delete_item("tag_list", children_only=True)
         for tag in tags:
             if app_data.lower() in tag[1].lower():  # Search in tag name
@@ -116,7 +116,7 @@ class Filters:
 
         # Folder list
         with dpg.collapsing_header(label="Folders", tag="folder_list", parent="filters"):
-            for folder in self.db_handler.get_all_folders():
+            for folder in self.local_db.get_all_folders():
                 checkbox = dpg.add_checkbox(
                     label=folder[1],
                     callback=self.increment_song_from_filter,
@@ -129,7 +129,7 @@ class Filters:
 
         # Tag list
         with dpg.collapsing_header(label="Tags", tag="tag_list", parent="filters"):
-            for tag in self.db_handler.get_all_tags():
+            for tag in self.local_db.get_all_tags():
                 checkbox = dpg.add_checkbox(
                     label=tag[1],
                     callback=self.increment_song_from_filter,
