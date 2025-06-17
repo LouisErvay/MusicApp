@@ -13,10 +13,14 @@ class FolderQuery:
 
     def _get_connection(self) -> sqlite3.Connection:
         """Crée et retourne une connexion à la base de données."""
-        conn = sqlite3.connect(self.db_path)
-        conn.execute('PRAGMA foreign_keys = ON')
-        conn.execute('PRAGMA encoding = "UTF-8"')
-        return conn
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.execute('PRAGMA foreign_keys = ON')
+            conn.execute('PRAGMA encoding = "UTF-8"')
+            return conn
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la connexion à la base de données: {e}")
+            raise
 
     def get_folder_by_id(self, folder_id: int) -> Optional[Tuple]:
         """
@@ -28,14 +32,18 @@ class FolderQuery:
         Returns:
             Optional[Tuple]: Informations du dossier ou None si non trouvé
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, path_hash, parent_id
-                FROM folder
-                WHERE id = ?
-            """, (folder_id,))
-            return cursor.fetchone()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, name, path, path_hash, parent_id
+                    FROM folder
+                    WHERE id = ?
+                """, (folder_id,))
+                return cursor.fetchone()
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la récupération du dossier {folder_id}: {e}")
+            return None
 
     def get_all_folders(self) -> List[Tuple]:
         """
@@ -44,14 +52,18 @@ class FolderQuery:
         Returns:
             List[Tuple]: Liste des dossiers
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, path_hash, parent_id
-                FROM folder
-                ORDER BY name
-            """)
-            return cursor.fetchall()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, name, path, path_hash, parent_id
+                    FROM folder
+                    ORDER BY name
+                """)
+                return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la récupération de tous les dossiers: {e}")
+            return []
 
     def add_folder(self, name: str, path: str, path_hash: str, parent_id: Optional[int] = None) -> int:
         """
@@ -66,14 +78,18 @@ class FolderQuery:
         Returns:
             int: ID du dossier créé
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO folder (name, path, path_hash, parent_id) VALUES (?, ?, ?, ?)",
-                (name, path, path_hash, parent_id)
-            )
-            conn.commit()
-            return cursor.lastrowid
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO folder (name, path, path_hash, parent_id) VALUES (?, ?, ?, ?)",
+                    (name, path, path_hash, parent_id)
+                )
+                conn.commit()
+                return cursor.lastrowid
+        except sqlite3.Error as e:
+            print(f"Erreur lors de l'ajout du dossier '{name}': {e}")
+            return -1
 
     def delete_folder(self, folder_id: int) -> None:
         """
@@ -82,30 +98,33 @@ class FolderQuery:
         Args:
             folder_id (int): ID du dossier
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            
-            # Récupérer les IDs des chansons à supprimer
-            cursor.execute("SELECT id FROM song WHERE folder_id = ?", (folder_id,))
-            song_ids = [row[0] for row in cursor.fetchall()]
-            
-            # Supprimer les associations des chansons
-            for song_id in song_ids:
-                cursor.execute("DELETE FROM song_tag WHERE song_id = ?", (song_id,))
-                cursor.execute("DELETE FROM playlist_song WHERE song_id = ?", (song_id,))
-            
-            # Supprimer les chansons
-            cursor.execute("DELETE FROM song WHERE folder_id = ?", (folder_id,))
-            
-            # Supprimer les sous-dossiers récursivement
-            cursor.execute("SELECT id FROM folder WHERE parent_id = ?", (folder_id,))
-            subfolder_ids = [row[0] for row in cursor.fetchall()]
-            for subfolder_id in subfolder_ids:
-                self.delete_folder(subfolder_id)
-            
-            # Supprimer le dossier lui-même
-            cursor.execute("DELETE FROM folder WHERE id = ?", (folder_id,))
-            conn.commit()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                
+                # Récupérer les IDs des chansons à supprimer
+                cursor.execute("SELECT id FROM song WHERE folder_id = ?", (folder_id,))
+                song_ids = [row[0] for row in cursor.fetchall()]
+                
+                # Supprimer les associations des chansons
+                for song_id in song_ids:
+                    cursor.execute("DELETE FROM song_tag WHERE song_id = ?", (song_id,))
+                    cursor.execute("DELETE FROM playlist_song WHERE song_id = ?", (song_id,))
+                
+                # Supprimer les chansons
+                cursor.execute("DELETE FROM song WHERE folder_id = ?", (folder_id,))
+                
+                # Supprimer les sous-dossiers récursivement
+                cursor.execute("SELECT id FROM folder WHERE parent_id = ?", (folder_id,))
+                subfolder_ids = [row[0] for row in cursor.fetchall()]
+                for subfolder_id in subfolder_ids:
+                    self.delete_folder(subfolder_id)
+                
+                # Supprimer le dossier lui-même
+                cursor.execute("DELETE FROM folder WHERE id = ?", (folder_id,))
+                conn.commit()
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la suppression du dossier {folder_id}: {e}")
 
     def get_folder_by_path_hash(self, path_hash: str) -> Optional[Tuple]:
         """
@@ -117,14 +136,18 @@ class FolderQuery:
         Returns:
             Optional[Tuple]: Informations du dossier ou None si non trouvé
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, path_hash, parent_id
-                FROM folder
-                WHERE path_hash = ?
-            """, (path_hash,))
-            return cursor.fetchone()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, name, path, path_hash, parent_id
+                    FROM folder
+                    WHERE path_hash = ?
+                """, (path_hash,))
+                return cursor.fetchone()
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la récupération du dossier par hash '{path_hash}': {e}")
+            return None
 
     def get_subfolders(self, parent_id: int) -> List[Tuple]:
         """
@@ -136,15 +159,19 @@ class FolderQuery:
         Returns:
             List[Tuple]: Liste des sous-dossiers
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, path_hash, parent_id
-                FROM folder
-                WHERE parent_id = ?
-                ORDER BY name
-            """, (parent_id,))
-            return cursor.fetchall()
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, name, path, path_hash, parent_id
+                    FROM folder
+                    WHERE parent_id = ?
+                    ORDER BY name
+                """, (parent_id,))
+                return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la récupération des sous-dossiers du dossier {parent_id}: {e}")
+            return []
 
     def get_root_folders(self) -> List[Tuple]:
         """
@@ -153,12 +180,16 @@ class FolderQuery:
         Returns:
             List[Tuple]: Liste des dossiers racine
         """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, path_hash, parent_id
-                FROM folder
-                WHERE parent_id IS NULL
-                ORDER BY name
-            """)
-            return cursor.fetchall() 
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, name, path, path_hash, parent_id
+                    FROM folder
+                    WHERE parent_id IS NULL
+                    ORDER BY name
+                """)
+                return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Erreur lors de la récupération des dossiers racine: {e}")
+            return [] 

@@ -3,7 +3,7 @@ import sqlite3
 import hashlib
 import time
 from typing import List, Tuple, Optional, Dict, Any
-from src.objects.folder import LocalFolder, DriveFolder
+from src.objects.folder import LocalFolder
 from src.objects.song import Song
 from .song_query import SongQuery
 from .folder_query import FolderQuery
@@ -309,6 +309,15 @@ class LocalDb:
     def get_all_songs(self) -> List[Tuple]:
         return self.song_query.get_all_songs()
     
+    def get_songs_by_folder(self, folder_ids: List[int]) -> List[Tuple]:
+        return self.song_query.get_songs_by_folder(folder_ids)
+    
+    def get_songs_by_tag(self, tag_ids: List[int]) -> List[Tuple]:
+        return self.song_query.get_songs_by_tag(tag_ids)
+
+    def get_songs_by_folder_and_tag(self, folder_ids: List[int], tag_ids: List[int]) -> List[Tuple]:
+        return self.song_query.get_songs_by_folder_and_tag(folder_ids, tag_ids)
+
     def add_song_tag(self, song_id: int, tag_id: int) -> None:
         return self.song_query.add_song_tag(song_id, tag_id)
     
@@ -352,6 +361,9 @@ class LocalDb:
     def delete_tag_by_name(self, tag_name: str) -> bool:
         return self.tag_query.delete_tag_by_name(tag_name)
     
+    def add_tag(self, tag_name: str) -> int:
+        return self.tag_query.add_tag(tag_name)
+
     # Délégation pour les playlists
     def get_all_playlists(self) -> List[Tuple]:
         return self.playlist_query.get_all_playlists()

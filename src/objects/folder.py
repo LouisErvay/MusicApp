@@ -47,8 +47,6 @@ class LocalFolder(Folder):
             elif item.lower().endswith(('.mp3', '.wav', '.ogg', '.flac')):
                 song = Song(item, item_path)
                 self.add_song(song)
-
-class DriveFolder(Folder):
     """Dossier Google Drive."""
     
     def __init__(self, name: str, path: str, drive_id: str):
