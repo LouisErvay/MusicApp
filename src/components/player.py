@@ -134,7 +134,7 @@ class MusicPlayer:
                     self.playing_thread = Thread(target=self.update_slider, daemon=True)
                     self.playing_thread.start()
                     dpg.configure_item("play", label="Pause")
-                    dpg.configure_item("sfolder", default_value=f"Folder: {song_data[4]}")
+                    dpg.configure_item("sfolder", default_value=f"Folder: {song_data[5]}")
                     dpg.configure_item("player_state", default_value="State: Playing")
                     dpg.configure_item("csong", default_value=f"Now Playing: {ntpath.basename(song_path)}")
                     dpg.configure_item("song_timer", default_value=f"0:0 of {converted_song_length}")

@@ -132,7 +132,7 @@ class SongList:
                                  height=24, user_data=song)
                     dpg.add_text(f"{song[0]}")
                     dpg.add_text(f"{song[1]}")
-                    dpg.add_text(f"{song[4]}")
+                    dpg.add_text(f"{song[5]}")
                     dpg.add_button(label="Edit Tags", width=80, callback=lambda s, a, u: self.show_tag_popup(u),
                                  user_data=song[0])
 
