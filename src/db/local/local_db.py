@@ -1,8 +1,15 @@
 import os
 import sqlite3
+import hashlib
+import time
 from typing import List, Tuple, Optional, Dict, Any
 from src.objects.folder import LocalFolder, DriveFolder
 from src.objects.song import Song
+from .song_query import SongQuery
+from .folder_query import FolderQuery
+from .tag_query import TagQuery
+from .playlist_query import PlaylistQuery
+from .song_history_query import SongHistoryQuery
 
 class LocalDb:
     def __init__(self, root_folder: str):
@@ -17,6 +24,14 @@ class LocalDb:
         self.root_folder = root_folder
         self.db_path = os.path.join(root_folder, "MusicApp_database.db")
         print(f"Chemin de la base de données: {self.db_path}")
+        
+        # Initialiser les gestionnaires de requêtes
+        self.song_query = SongQuery(self.db_path)
+        self.folder_query = FolderQuery(self.db_path)
+        self.tag_query = TagQuery(self.db_path)
+        self.playlist_query = PlaylistQuery(self.db_path)
+        self.song_history_query = SongHistoryQuery(self.db_path)
+        
         self._init_db()
 
     def _init_db(self) -> None:
@@ -49,20 +64,8 @@ class LocalDb:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(100) NOT NULL,
                     path VARCHAR(255) NOT NULL,
+                    path_hash VARCHAR(64) NOT NULL UNIQUE,
                     parent_id INTEGER,
-                    drive_id VARCHAR(100),
-                    FOREIGN KEY (parent_id) REFERENCES folder(id)
-                )
-            """)
-            
-            # Table des chansons
-            print("Création de la table 'song'...")
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS song (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name VARCHAR(100) NOT NULL,
-                    path VARCHAR(255) NOT NULL,
-                    parent_id INTEGER NOT NULL,
                     FOREIGN KEY (parent_id) REFERENCES folder(id)
                 )
             """)
@@ -72,8 +75,34 @@ class LocalDb:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS tag (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name VARCHAR(100) NOT NULL UNIQUE,
-                    description TEXT
+                    name VARCHAR(100) NOT NULL UNIQUE
+                )
+            """)
+            
+            # Table des playlists
+            print("Création de la table 'playlist'...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS playlist (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name VARCHAR(100) NOT NULL UNIQUE
+                )
+            """)
+            
+            # Table des chansons
+            print("Création de la table 'song'...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS song (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name VARCHAR(100) NOT NULL,
+                    full_path VARCHAR(500) NOT NULL,
+                    rel_path VARCHAR(500) NOT NULL,
+                    rel_path_hash VARCHAR(64) NOT NULL UNIQUE,
+                    file_hash VARCHAR(64) NOT NULL,
+                    folder_id INTEGER NOT NULL,
+                    last_modified INTEGER NOT NULL,
+                    present_locally INTEGER NOT NULL DEFAULT 1,
+                    synced_at INTEGER,
+                    FOREIGN KEY (folder_id) REFERENCES folder(id)
                 )
             """)
             
@@ -81,12 +110,49 @@ class LocalDb:
             print("Création de la table 'song_tag'...")
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS song_tag (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     song_id INTEGER NOT NULL,
                     tag_id INTEGER NOT NULL,
+                    PRIMARY KEY (song_id, tag_id),
                     FOREIGN KEY (song_id) REFERENCES song(id),
-                    FOREIGN KEY (tag_id) REFERENCES tag(id),
-                    UNIQUE(song_id, tag_id)
+                    FOREIGN KEY (tag_id) REFERENCES tag(id)
+                )
+            """)
+            
+            # Table de liaison playlist-song
+            print("Création de la table 'playlist_song'...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS playlist_song (
+                    playlist_id INTEGER NOT NULL,
+                    song_id INTEGER NOT NULL,
+                    PRIMARY KEY (playlist_id, song_id),
+                    FOREIGN KEY (playlist_id) REFERENCES playlist(id),
+                    FOREIGN KEY (song_id) REFERENCES song(id)
+                )
+            """)
+            
+            # Table de liaison playlist-tag
+            print("Création de la table 'playlist_tag'...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS playlist_tag (
+                    playlist_id INTEGER NOT NULL,
+                    tag_id INTEGER NOT NULL,
+                    PRIMARY KEY (playlist_id, tag_id),
+                    FOREIGN KEY (playlist_id) REFERENCES playlist(id),
+                    FOREIGN KEY (tag_id) REFERENCES tag(id)
+                )
+            """)
+            
+            # Table d'historique des chansons
+            print("Création de la table 'song_history'...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS song_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    song_id INTEGER NOT NULL,
+                    operation_type VARCHAR(50) NOT NULL,
+                    timestamp INTEGER NOT NULL,
+                    from_path VARCHAR(500),
+                    to_path VARCHAR(500),
+                    FOREIGN KEY (song_id) REFERENCES song(id)
                 )
             """)
             
@@ -98,23 +164,62 @@ class LocalDb:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             
-            # Vérifie si la colonne drive_id existe
-            cursor.execute("PRAGMA table_info(folder)")
-            columns = [column[1] for column in cursor.fetchall()]
+            # Vérifier si l'ancienne structure existe et la migrer si nécessaire
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            existing_tables = [row[0] for row in cursor.fetchall()]
             
-            if 'drive_id' not in columns:
-                # Ajoute la colonne drive_id
-                cursor.execute("ALTER TABLE folder ADD COLUMN drive_id VARCHAR(100)")
-                conn.commit()
+            # Si les nouvelles tables n'existent pas, les créer
+            if 'folder' not in existing_tables:
+                self._create_tables()
+            else:
+                # Vérifier si la nouvelle structure est en place
+                cursor.execute("PRAGMA table_info(folder)")
+                folder_columns = [column[1] for column in cursor.fetchall()]
+                
+                if 'path_hash' not in folder_columns:
+                    # Migration nécessaire - recréer les tables avec la nouvelle structure
+                    print("Migration de l'ancienne structure vers la nouvelle...")
+                    self._migrate_old_structure()
 
-            # Vérifie si la colonne description existe dans la table tag
-            cursor.execute("PRAGMA table_info(tag)")
-            columns = [column[1] for column in cursor.fetchall()]
+    def _migrate_old_structure(self) -> None:
+        """Migre l'ancienne structure vers la nouvelle."""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
             
-            if 'description' not in columns:
-                # Ajoute la colonne description
-                cursor.execute("ALTER TABLE tag ADD COLUMN description TEXT")
-                conn.commit()
+            # Sauvegarde des données existantes si nécessaire
+            # Pour cette migration, on recrée tout depuis le début
+            cursor.execute("DROP TABLE IF EXISTS song_tag")
+            cursor.execute("DROP TABLE IF EXISTS song")
+            cursor.execute("DROP TABLE IF EXISTS folder")
+            cursor.execute("DROP TABLE IF EXISTS tag")
+            
+            # Recréer les tables avec la nouvelle structure
+            self._create_tables()
+            conn.commit()
+
+    def _generate_path_hash(self, path: str) -> str:
+        """Génère un hash SHA256 pour un chemin."""
+        return hashlib.sha256(path.encode('utf-8')).hexdigest()
+
+    def _generate_file_hash(self, file_path: str) -> str:
+        """Génère un hash SHA256 pour le contenu d'un fichier."""
+        hash_sha256 = hashlib.sha256()
+        try:
+            with open(file_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_sha256.update(chunk)
+        except (IOError, OSError):
+            # Si le fichier ne peut pas être lu, utiliser le chemin comme hash
+            hash_sha256.update(file_path.encode('utf-8'))
+        return hash_sha256.hexdigest()
+
+    def _get_relative_path(self, full_path: str) -> str:
+        """Convertit un chemin absolu en chemin relatif par rapport au dossier racine."""
+        try:
+            return os.path.relpath(full_path, self.root_folder)
+        except ValueError:
+            # Si le chemin n'est pas sous le dossier racine, retourner le chemin complet
+            return full_path
 
     def _init_root_folder(self) -> None:
         """Initialise le dossier racine dans la base de données et charge son contenu."""
@@ -125,15 +230,11 @@ class LocalDb:
         print(f"Nom du dossier racine: {folder_name}")
 
         # Créer le dossier racine dans la base de données
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO folder (name, path, parent_id) VALUES (?, ?, NULL)",
-                (folder_name, self.root_folder)
-            )
-            conn.commit()
-            root_id = cursor.lastrowid
-            print(f"Dossier racine créé dans la DB avec l'ID: {root_id}")
+        root_rel_path = ""  # Le dossier racine a un chemin relatif vide
+        root_path_hash = self._generate_path_hash(root_rel_path)
+        
+        root_id = self.folder_query.add_folder(folder_name, root_rel_path, root_path_hash)
+        print(f"Dossier racine créé dans la DB avec l'ID: {root_id}")
 
         # Créer et charger le dossier racine
         print("Création de l'objet LocalFolder...")
@@ -163,418 +264,119 @@ class LocalDb:
             parent_id (Optional[int]): ID du dossier parent
         """
         # Si parent_id est None, c'est le dossier racine qui est déjà créé
-        folder_id = parent_id if parent_id is not None else self.add_folder(folder.name, folder.path, parent_id)
+        folder_id = parent_id
 
         # Ajoute les sous-dossiers et les chansons
         for element in folder.elements:
             if isinstance(element, LocalFolder):
                 # Pour les sous-dossiers, on crée toujours un nouveau dossier
-                subfolder_id = self.add_folder(element.name, element.path, folder_id)
+                rel_path = self._get_relative_path(element.path)
+                path_hash = self._generate_path_hash(rel_path)
+                subfolder_id = self.folder_query.add_folder(element.name, rel_path, path_hash, folder_id)
                 # Récursion pour les sous-dossiers
                 self.increment_db(element, subfolder_id)
             elif isinstance(element, Song):
                 # Ajout des chansons
-                song_id = self.add_song(element.name, element.path, folder_id)
+                rel_path = self._get_relative_path(element.path)
+                rel_path_hash = self._generate_path_hash(rel_path)
+                file_hash = self._generate_file_hash(element.path)
+                last_modified = int(os.path.getmtime(element.path)) if os.path.exists(element.path) else 0
+                
+                song_id = self.song_query.add_song(
+                    name=element.name,
+                    full_path=element.path,
+                    rel_path=rel_path,
+                    rel_path_hash=rel_path_hash,
+                    file_hash=file_hash,
+                    folder_id=folder_id,
+                    last_modified=last_modified
+                )
+                
+                # Enregistrer l'opération dans l'historique
+                self.song_history_query.add_song_history(song_id, "added", int(time.time()), to_path=rel_path)
+                
                 # Ajout des tags de la chanson s'il y en a
                 for tag in element.tags:
-                    tag_id = self.add_tag(tag)
-                    self.add_song_tag(song_id, tag_id)
+                    tag_id = self.tag_query.add_tag(tag)
+                    self.song_query.add_song_tag(song_id, tag_id)
 
-    def get_folder_by_id(self, folder_id: int) -> Optional[Tuple]:
-        """
-        Récupère un dossier par son ID.
-        
-        Args:
-            folder_id (int): ID du dossier
-            
-        Returns:
-            Optional[Tuple]: Informations du dossier ou None si non trouvé
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, parent_id, drive_id
-                FROM folder
-                WHERE id = ?
-            """, (folder_id,))
-            return cursor.fetchone()
-
+    # Méthodes de délégation vers les gestionnaires de requêtes spécialisés
+    
+    # Délégation pour les chansons
     def get_song_by_id(self, song_id: int) -> Optional[Tuple]:
-        """
-        Récupère une chanson par son ID.
-        
-        Args:
-            song_id (int): ID de la chanson
-            
-        Returns:
-            Optional[Tuple]: Informations de la chanson ou None si non trouvée
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT s.id, s.name, s.path, s.parent_id, f.name as folder_name,
-                       GROUP_CONCAT(t.name) as tags
-                FROM song s
-                JOIN folder f ON s.parent_id = f.id
-                LEFT JOIN song_tag st ON s.id = st.song_id
-                LEFT JOIN tag t ON st.tag_id = t.id
-                WHERE s.id = ?
-                GROUP BY s.id
-            """, (song_id,))
-            return cursor.fetchone()
-
+        return self.song_query.get_song_by_id(song_id)
+    
     def get_all_songs(self) -> List[Tuple]:
-        """
-        Récupère toutes les chansons avec leurs informations.
-        
-        Returns:
-            List[Tuple]: Liste des chansons avec leurs informations
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT 
-                    s.id,
-                    s.name,
-                    s.path,
-                    s.parent_id,
-                    f.name as folder_name
-                FROM song s
-                JOIN folder f ON s.parent_id = f.id
-                ORDER BY s.name
-            """)
-            return cursor.fetchall()
-
-    def get_songs_by_folder(self, folder_ids: List[int]) -> List[Tuple]:
-        """
-        Récupère les chansons d'un ou plusieurs dossiers.
-        
-        Args:
-            folder_ids (List[int]): Liste des IDs des dossiers
-            
-        Returns:
-            List[Tuple]: Liste des chansons trouvées
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            placeholders = ','.join('?' * len(folder_ids))
-            cursor.execute(f"""
-                SELECT 
-                    s.id,
-                    s.name,
-                    s.path,
-                    s.parent_id,
-                    f.name as folder_name
-                FROM song s
-                JOIN folder f ON s.parent_id = f.id
-                WHERE s.parent_id IN ({placeholders})
-                ORDER BY s.name
-            """, folder_ids)
-            return cursor.fetchall()
-
-    def get_songs_by_tag(self, tag_ids: List[int]) -> List[Tuple]:
-        """
-        Récupère les chansons ayant certains tags.
-        
-        Args:
-            tag_ids (List[int]): Liste des IDs des tags
-            
-        Returns:
-            List[Tuple]: Liste des chansons trouvées
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            placeholders = ','.join('?' * len(tag_ids))
-            cursor.execute(f"""
-                SELECT 
-                    s.id,
-                    s.name,
-                    s.path,
-                    s.parent_id,
-                    f.name as folder_name
-                FROM song s
-                JOIN folder f ON s.parent_id = f.id
-                JOIN song_tag st ON s.id = st.song_id
-                WHERE st.tag_id IN ({placeholders})
-                GROUP BY s.id
-                ORDER BY s.name
-            """, tag_ids)
-            return cursor.fetchall()
-
-    def get_songs_by_folder_and_tag(self, folder_ids: List[int], tag_ids: List[int]) -> List[Tuple]:
-        """
-        Récupère les chansons ayant certains tags et appartenant à certains dossiers.
-        
-        Args:
-            folder_ids (List[int]): Liste des IDs des dossiers
-            tag_ids (List[int]): Liste des IDs des tags
-            
-        Returns:
-            List[Tuple]: Liste des chansons trouvées
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            folder_placeholders = ','.join('?' * len(folder_ids))
-            tag_placeholders = ','.join('?' * len(tag_ids))
-            
-            cursor.execute(f"""
-                SELECT 
-                    s.id,
-                    s.name,
-                    s.path,
-                    s.parent_id,
-                    f.name as folder_name
-                FROM song s
-                LEFT JOIN song_tag AS specific_tag ON s.id = specific_tag.song_id
-                AND specific_tag.tag_id IN ({tag_placeholders})
-                LEFT JOIN song_tag ON s.id = song_tag.song_id
-                LEFT JOIN tag ON song_tag.tag_id = tag.id
-                INNER JOIN folder f ON s.parent_id = f.id
-                WHERE s.parent_id IN ({folder_placeholders})
-                AND specific_tag.tag_id IS NOT NULL
-                GROUP BY s.id
-                ORDER BY s.name
-            """, tag_ids + folder_ids)
-            return cursor.fetchall()
-
-    def get_all_folders(self) -> List[Tuple]:
-        """
-        Récupère tous les dossiers.
-        
-        Returns:
-            List[Tuple]: Liste des dossiers
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name, path, parent_id
-                FROM folder
-                ORDER BY name
-            """)
-            return cursor.fetchall()
-
-    def get_all_tags(self) -> List[Tuple]:
-        """
-        Récupère tous les tags.
-        
-        Returns:
-            List[Tuple]: Liste des tags
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT id, name
-                FROM tag
-                ORDER BY name
-            """)
-            return cursor.fetchall()
-
-    def add_song(self, name: str, path: str, parent_id: int) -> int:
-        """
-        Ajoute une nouvelle chanson.
-        
-        Args:
-            name (str): Nom de la chanson
-            path (str): Chemin de la chanson
-            parent_id (int): ID du dossier parent
-            
-        Returns:
-            int: ID de la chanson créée
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO song (name, path, parent_id) VALUES (?, ?, ?)",
-                (name, path, parent_id)
-            )
-            conn.commit()
-            return cursor.lastrowid
-
-    def add_folder(self, name: str, path: str, parent_id: Optional[int] = None, drive_id: Optional[str] = None) -> int:
-        """
-        Ajoute un nouveau dossier.
-        
-        Args:
-            name (str): Nom du dossier
-            path (str): Chemin du dossier
-            parent_id (Optional[int]): ID du dossier parent
-            drive_id (Optional[str]): ID Google Drive si applicable
-            
-        Returns:
-            int: ID du dossier créé
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO folder (name, path, parent_id, drive_id) VALUES (?, ?, ?, ?)",
-                (name, path, parent_id, drive_id)
-            )
-            conn.commit()
-            return cursor.lastrowid
-
-    def add_tag(self, name: str, description: Optional[str] = None) -> int:
-        """
-        Ajoute un nouveau tag.
-        
-        Args:
-            name (str): Nom du tag
-            description (Optional[str]): Description du tag
-            
-        Returns:
-            int: ID du tag créé
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT INTO tag (name, description) VALUES (?, ?)",
-                (name, description)
-            )
-            conn.commit()
-            return cursor.lastrowid
-
+        return self.song_query.get_all_songs()
+    
     def add_song_tag(self, song_id: int, tag_id: int) -> None:
-        """
-        Associe un tag à une chanson.
-        
-        Args:
-            song_id (int): ID de la chanson
-            tag_id (int): ID du tag
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "INSERT OR IGNORE INTO song_tag (song_id, tag_id) VALUES (?, ?)",
-                (song_id, tag_id)
-            )
-            conn.commit()
-
+        return self.song_query.add_song_tag(song_id, tag_id)
+    
     def remove_song_tag(self, song_id: int, tag_id: int) -> None:
-        """
-        Retire un tag d'une chanson.
-        
-        Args:
-            song_id (int): ID de la chanson
-            tag_id (int): ID du tag
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "DELETE FROM song_tag WHERE song_id = ? AND tag_id = ?",
-                (song_id, tag_id)
-            )
-            conn.commit()
-
-    def delete_song(self, song_id: int) -> None:
-        """
-        Supprime une chanson.
-        
-        Args:
-            song_id (int): ID de la chanson
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM song_tag WHERE song_id = ?", (song_id,))
-            cursor.execute("DELETE FROM song WHERE id = ?", (song_id,))
-            conn.commit()
-
-    def delete_folder(self, folder_id: int) -> None:
-        """
-        Supprime un dossier et son contenu.
-        
-        Args:
-            folder_id (int): ID du dossier
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            # Supprime d'abord les chansons et leurs tags
-            cursor.execute("""
-                DELETE FROM song_tag 
-                WHERE song_id IN (SELECT id FROM song WHERE parent_id = ?)
-            """, (folder_id,))
-            cursor.execute("DELETE FROM song WHERE parent_id = ?", (folder_id,))
-            # Supprime les sous-dossiers
-            cursor.execute("DELETE FROM folder WHERE parent_id = ?", (folder_id,))
-            # Supprime le dossier lui-même
-            cursor.execute("DELETE FROM folder WHERE id = ?", (folder_id,))
-            conn.commit()
-
-    def tag_exists(self, tag_name: str) -> bool:
-        """
-        Vérifie si un tag existe déjà dans la base de données.
-        
-        Args:
-            tag_name (str): Nom du tag à vérifier
-            
-        Returns:
-            bool: True si le tag existe, False sinon
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM tag WHERE name = ?", (tag_name,))
-            return cursor.fetchone() is not None
-
-    def delete_tag_by_name(self, tag_name: str) -> bool:
-        """
-        Supprime un tag et ses associations par son nom.
-        
-        Args:
-            tag_name (str): Nom du tag à supprimer
-            
-        Returns:
-            bool: True si le tag a été supprimé, False s'il n'existe pas
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            # Récupérer l'ID du tag
-            cursor.execute("SELECT id FROM tag WHERE name = ?", (tag_name,))
-            tag = cursor.fetchone()
-            if not tag:
-                return False
-
-            # Supprimer les associations du tag avec les chansons
-            cursor.execute("DELETE FROM song_tag WHERE tag_id = ?", (tag[0],))
-            # Supprimer le tag
-            cursor.execute("DELETE FROM tag WHERE id = ?", (tag[0],))
-            conn.commit()
-            return True
-
+        return self.song_query.remove_song_tag(song_id, tag_id)
+    
     def get_song_tags(self, song_id: int) -> List[Tuple]:
-        """
-        Récupère tous les tags d'une chanson.
-        
-        Args:
-            song_id (int): ID de la chanson
-            
-        Returns:
-            List[Tuple]: Liste des tags (id, name) de la chanson
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT t.id, t.name
-                FROM tag t
-                JOIN song_tag st ON t.id = st.tag_id
-                WHERE st.song_id = ?
-                ORDER BY t.name
-            """, (song_id,))
-            return cursor.fetchall()
-
+        return self.song_query.get_song_tags(song_id)
+    
     def update_song_tags(self, song_id: int, tag_ids: List[int]) -> None:
-        """
-        Met à jour les tags d'une chanson.
-        
-        Args:
-            song_id (int): ID de la chanson
-            tag_ids (List[int]): Liste des IDs des tags à associer à la chanson
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            # Supprimer toutes les associations existantes
-            cursor.execute("DELETE FROM song_tag WHERE song_id = ?", (song_id,))
-            # Ajouter les nouvelles associations
-            for tag_id in tag_ids:
-                cursor.execute(
-                    "INSERT INTO song_tag (song_id, tag_id) VALUES (?, ?)",
-                    (song_id, tag_id)
-                )
-            conn.commit() 
+        return self.song_query.update_song_tags(song_id, tag_ids)
+    
+    def update_song_sync_status(self, song_id: int, synced_at: int) -> None:
+        return self.song_query.update_song_sync_status(song_id, synced_at)
+    
+    def mark_song_as_missing(self, song_id: int) -> None:
+        return self.song_query.mark_song_as_missing(song_id)
+    
+    def delete_song(self, song_id: int) -> None:
+        # Enregistrer l'historique avant suppression
+        self.song_history_query.add_song_history(song_id, "deleted", int(time.time()))
+        return self.song_query.delete_song(song_id)
+    
+    # Délégation pour les dossiers
+    def get_folder_by_id(self, folder_id: int) -> Optional[Tuple]:
+        return self.folder_query.get_folder_by_id(folder_id)
+    
+    def get_all_folders(self) -> List[Tuple]:
+        return self.folder_query.get_all_folders()
+    
+    def delete_folder(self, folder_id: int) -> None:
+        return self.folder_query.delete_folder(folder_id)
+    
+    # Délégation pour les tags
+    def get_all_tags(self) -> List[Tuple]:
+        return self.tag_query.get_all_tags()
+    
+    def tag_exists(self, tag_name: str) -> bool:
+        return self.tag_query.tag_exists(tag_name)
+    
+    def delete_tag_by_name(self, tag_name: str) -> bool:
+        return self.tag_query.delete_tag_by_name(tag_name)
+    
+    # Délégation pour les playlists
+    def get_all_playlists(self) -> List[Tuple]:
+        return self.playlist_query.get_all_playlists()
+    
+    def add_playlist(self, name: str) -> int:
+        return self.playlist_query.add_playlist(name)
+    
+    def delete_playlist(self, playlist_id: int) -> None:
+        return self.playlist_query.delete_playlist(playlist_id)
+    
+    def get_playlist_songs(self, playlist_id: int) -> List[Tuple]:
+        return self.playlist_query.get_playlist_songs(playlist_id)
+    
+    def get_playlist_tags(self, playlist_id: int) -> List[Tuple]:
+        return self.playlist_query.get_playlist_tags(playlist_id)
+    
+    def add_playlist_song(self, playlist_id: int, song_id: int) -> None:
+        return self.playlist_query.add_playlist_song(playlist_id, song_id)
+    
+    def remove_playlist_song(self, playlist_id: int, song_id: int) -> None:
+        return self.playlist_query.remove_playlist_song(playlist_id, song_id)
+    
+    def add_playlist_tag(self, playlist_id: int, tag_id: int) -> None:
+        return self.playlist_query.add_playlist_tag(playlist_id, tag_id)
+    
+    # Délégation pour l'historique
+    def get_song_history(self, song_id: Optional[int] = None, limit: int = 100) -> List[Tuple]:
+        return self.song_history_query.get_song_history(song_id, limit) 
