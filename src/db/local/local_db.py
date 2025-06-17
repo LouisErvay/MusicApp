@@ -303,9 +303,6 @@ class LocalDb:
     # Méthodes de délégation vers les gestionnaires de requêtes spécialisés
     
     # Délégation pour les chansons
-    def get_song_by_id(self, song_id: int) -> Optional[Tuple]:
-        return self.song_query.get_song_by_id(song_id)
-    
     def get_all_songs(self) -> List[Tuple]:
         return self.song_query.get_all_songs()
     
@@ -318,39 +315,17 @@ class LocalDb:
     def get_songs_by_folder_and_tag(self, folder_ids: List[int], tag_ids: List[int]) -> List[Tuple]:
         return self.song_query.get_songs_by_folder_and_tag(folder_ids, tag_ids)
 
-    def add_song_tag(self, song_id: int, tag_id: int) -> None:
-        return self.song_query.add_song_tag(song_id, tag_id)
-    
-    def remove_song_tag(self, song_id: int, tag_id: int) -> None:
-        return self.song_query.remove_song_tag(song_id, tag_id)
-    
     def get_song_tags(self, song_id: int) -> List[Tuple]:
         return self.song_query.get_song_tags(song_id)
     
     def update_song_tags(self, song_id: int, tag_ids: List[int]) -> None:
         return self.song_query.update_song_tags(song_id, tag_ids)
     
-    def update_song_sync_status(self, song_id: int, synced_at: int) -> None:
-        return self.song_query.update_song_sync_status(song_id, synced_at)
-    
-    def mark_song_as_missing(self, song_id: int) -> None:
-        return self.song_query.mark_song_as_missing(song_id)
-    
-    def delete_song(self, song_id: int) -> None:
-        # Enregistrer l'historique avant suppression
-        self.song_history_query.add_song_history(song_id, "deleted", int(time.time()))
-        return self.song_query.delete_song(song_id)
-    
+
     # Délégation pour les dossiers
-    def get_folder_by_id(self, folder_id: int) -> Optional[Tuple]:
-        return self.folder_query.get_folder_by_id(folder_id)
-    
     def get_all_folders(self) -> List[Tuple]:
         return self.folder_query.get_all_folders()
-    
-    def delete_folder(self, folder_id: int) -> None:
-        return self.folder_query.delete_folder(folder_id)
-    
+
     # Délégation pour les tags
     def get_all_tags(self) -> List[Tuple]:
         return self.tag_query.get_all_tags()
@@ -363,32 +338,4 @@ class LocalDb:
     
     def add_tag(self, tag_name: str) -> int:
         return self.tag_query.add_tag(tag_name)
-
-    # Délégation pour les playlists
-    def get_all_playlists(self) -> List[Tuple]:
-        return self.playlist_query.get_all_playlists()
-    
-    def add_playlist(self, name: str) -> int:
-        return self.playlist_query.add_playlist(name)
-    
-    def delete_playlist(self, playlist_id: int) -> None:
-        return self.playlist_query.delete_playlist(playlist_id)
-    
-    def get_playlist_songs(self, playlist_id: int) -> List[Tuple]:
-        return self.playlist_query.get_playlist_songs(playlist_id)
-    
-    def get_playlist_tags(self, playlist_id: int) -> List[Tuple]:
-        return self.playlist_query.get_playlist_tags(playlist_id)
-    
-    def add_playlist_song(self, playlist_id: int, song_id: int) -> None:
-        return self.playlist_query.add_playlist_song(playlist_id, song_id)
-    
-    def remove_playlist_song(self, playlist_id: int, song_id: int) -> None:
-        return self.playlist_query.remove_playlist_song(playlist_id, song_id)
-    
-    def add_playlist_tag(self, playlist_id: int, tag_id: int) -> None:
-        return self.playlist_query.add_playlist_tag(playlist_id, tag_id)
-    
-    # Délégation pour l'historique
-    def get_song_history(self, song_id: Optional[int] = None, limit: int = 100) -> List[Tuple]:
         return self.song_history_query.get_song_history(song_id, limit) 
