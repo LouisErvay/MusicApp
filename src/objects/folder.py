@@ -32,6 +32,9 @@ class Folder(BaseObject):
 class LocalFolder(Folder):
     """Dossier local du système de fichiers."""
     
+    def __init__(self, name: str, path: str):
+        super().__init__(name, path)
+    
     def load(self) -> None:
         """Charge le contenu du dossier depuis le système de fichiers."""
         if not os.path.exists(self.path):
@@ -46,14 +49,4 @@ class LocalFolder(Folder):
                 self.add_folder(folder)
             elif item.lower().endswith(('.mp3', '.wav', '.ogg', '.flac')):
                 song = Song(item, item_path)
-                self.add_song(song)
-    """Dossier Google Drive."""
-    
-    def __init__(self, name: str, path: str, drive_id: str):
-        super().__init__(name, path)
-        self.drive_id = drive_id
-
-    def load(self) -> None:
-        """Charge le contenu du dossier depuis Google Drive."""
-        # TODO: Implémenter le chargement depuis Google Drive
-        pass 
+                self.add_song(song) 
