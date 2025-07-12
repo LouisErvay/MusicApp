@@ -12,12 +12,16 @@ from src.db.local.local_db import LocalDb
 
 def main():
     # Chargement des variables d'environnement
-    load_dotenv()
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    print(f"Chargement du fichier .env depuis: {env_path}")
+    load_dotenv(env_path)
+    
     music_folder_path = os.getenv('SONG_FOLDER_PATH')
     if not music_folder_path:
         raise ValueError("La variable d'environnement SONG_FOLDER_PATH n'est pas définie")
 
     # Initialisation de la base de données
+    print(f"Utilisation du dossier de musique: {music_folder_path}")
     local_db = LocalDb(music_folder_path)
 
     # Initialisation de pygame pour la lecture audio

@@ -43,13 +43,31 @@ class LocalDb:
         if not db_exists:
             print("Création des tables...")
             self._create_tables()
-        
-        print("Migration de la base de données...")
-        self._migrate_database()
-        
-        if not db_exists:
             print("Initialisation du dossier racine...")
             self._init_root_folder()
+        else:
+            # Vérifier si le chemin racine a changé
+            stored_root = self._get_stored_root_path()
+            if stored_root and stored_root != self.root_folder:
+                print(f"Le chemin racine a changé de '{stored_root}' à '{self.root_folder}'")
+                print("Recréation de la base de données...")
+                os.remove(self.db_path)
+                self._create_tables()
+                self._init_root_folder()
+            else:
+                print("Migration de la base de données...")
+                self._migrate_database()
+
+    def _get_stored_root_path(self) -> Optional[str]:
+        """Récupère le chemin racine stocké dans la base de données."""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT path FROM folder WHERE parent_id IS NULL")
+                result = cursor.fetchone()
+                return result[0] if result else None
+        except sqlite3.Error:
+            return None
 
     def _create_tables(self) -> None:
         """Crée les tables nécessaires dans la base de données."""
