@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Start back",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "cwd": "${workspaceFolder}/back",
+            "args": [
+                "src.app:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8000",
+                "--reload"
+            ],
+            "python": "${workspaceFolder}/back/.venv/Scripts/python.exe",
+            "console": "integratedTerminal"
+        }
+    ]
+}

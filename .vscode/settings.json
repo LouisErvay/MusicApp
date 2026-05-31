@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "music_api",
+            "database": "music_api",
+            "username": "postgres",
+            "password": "DFOg58r62"
+        }
+    ]
+}
