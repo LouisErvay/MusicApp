@@ -11,4 +11,8 @@ dependencies = [
     "alembic",
     "pydantic",
     "python-dotenv",
+    "njl-fastapi-files",
 ]
+
+[tool.uv.sources]
+njl-fastapi-files = { git = "ssh://git@github.com/LouisErvay/monorepo.git", subdirectory = "packages/fastapi-files", rev = "v0.1.0" }
