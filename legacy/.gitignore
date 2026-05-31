@@ -1,0 +1,59 @@
+# Environnement virtuel
+.venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fichiers de log
+*.log
+
+# Fichiers de configuration d'éditeur
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Test coverage
+htmlcov/
+.coverage
+coverage.xml
+.cache
+
+# Pytest
+.pytest_cache/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# MyPy
+.mypy_cache/
+
+# Pylint
+.pylint.d/
+
+# Environnements / fichiers secrets
+.env
+.env.*
+
+# Tox
+.tox/
+
+# Profiling
+.prof
+
+# wheel
+*.whl
+
+# Dossier des musiques pour le dev
+MUSIC/
