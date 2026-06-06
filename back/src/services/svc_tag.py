@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from src.core.text_search import ilike_unaccent
 from src.models.mod_tag import Tag
 from src.shemas.shm_tag import TagCreate, TagPage, TagRead, TagUpdate
 
@@ -43,10 +44,13 @@ def create(session: Session, payload: TagCreate) -> TagRead:
     return TagRead.model_validate(tag)
 
 
-def list_tags(session: Session, *, page: int, size: int) -> TagPage:
-    total = session.scalar(select(func.count()).select_from(Tag)) or 0
+def list_tags(session: Session, *, page: int, size: int, name: str | None = None) -> TagPage:
+    stmt = select(Tag)
+    if name:
+        stmt = stmt.where(ilike_unaccent(Tag.name, name))
+    total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     offset = (page - 1) * size
-    tags = list(session.scalars(select(Tag).order_by(Tag.id).offset(offset).limit(size)))
+    tags = list(session.scalars(stmt.order_by(Tag.id).offset(offset).limit(size)))
     pages = (total + size - 1) // size if total > 0 else 0
     return TagPage(
         items=[TagRead.model_validate(tag) for tag in tags],

@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from src.core.text_search import ilike_unaccent
 from src.models.mod_artist import Artist
 from src.shemas.shm_artist import ArtistCreate, ArtistPage, ArtistRead, ArtistUpdate
 
@@ -43,11 +44,16 @@ def create(session: Session, payload: ArtistCreate) -> ArtistRead:
     return ArtistRead.model_validate(artist)
 
 
-def list_artists(session: Session, *, page: int, size: int) -> ArtistPage:
-    total = session.scalar(select(func.count()).select_from(Artist)) or 0
+def list_artists(
+    session: Session, *, page: int, size: int, username: str | None = None
+) -> ArtistPage:
+    stmt = select(Artist)
+    if username:
+        stmt = stmt.where(ilike_unaccent(Artist.username, username))
+    total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     offset = (page - 1) * size
     artists = list(
-        session.scalars(select(Artist).order_by(Artist.id).offset(offset).limit(size))
+        session.scalars(stmt.order_by(Artist.id).offset(offset).limit(size))
     )
     pages = (total + size - 1) // size if total > 0 else 0
     return ArtistPage(

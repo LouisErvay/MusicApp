@@ -27,9 +27,10 @@ def create_artist(
 def list_artists(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
+    username: str | None = Query(None, min_length=1, max_length=100),
     session: Session = Depends(get_session),
 ) -> ArtistPage:
-    return svc_artist.list_artists(session, page=page, size=size)
+    return svc_artist.list_artists(session, page=page, size=size, username=username)
 
 
 @router.get("/{artist_id}", response_model=ArtistRead)

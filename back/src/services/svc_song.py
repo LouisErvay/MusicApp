@@ -4,6 +4,7 @@ from fastapi_files import FileNotFound, FilesAPI
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from src.core.text_search import ilike_unaccent
 from src.models.mod_artist import Artist
 from src.models.mod_song import Song
 from src.models.mod_tag import Tag
@@ -65,9 +66,12 @@ def create_bulk(
 def _song_filters(
     stmt,
     *,
+    name: str | None = None,
     artist_ids: list[int],
     tag_ids: list[int],
 ):
+    if name:
+        stmt = stmt.where(ilike_unaccent(Song.name, name))
     if artist_ids:
         stmt = stmt.where(Song.artists.any(Artist.id.in_(artist_ids)))
     if tag_ids:
@@ -81,6 +85,7 @@ def list_songs(
     *,
     page: int,
     size: int,
+    name: str | None = None,
     artist_ids: list[int] | None = None,
     tag_ids: list[int] | None = None,
 ) -> SongPage:
@@ -88,6 +93,7 @@ def list_songs(
     tag_ids = tag_ids or []
     count_stmt = _song_filters(
         select(func.count()).select_from(Song),
+        name=name,
         artist_ids=artist_ids,
         tag_ids=tag_ids,
     )
@@ -95,6 +101,7 @@ def list_songs(
     offset = (page - 1) * size
     songs_stmt = _song_filters(
         select(Song).order_by(Song.id),
+        name=name,
         artist_ids=artist_ids,
         tag_ids=tag_ids,
     )

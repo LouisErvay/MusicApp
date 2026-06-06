@@ -100,6 +100,7 @@ def build_router(files_api: FilesAPI) -> APIRouter:
     def list_songs(
         page: int = Query(1, ge=1),
         size: int = Query(20, ge=1, le=100),
+        name: str | None = Query(None, min_length=1, max_length=100),
         artist_id: list[int] = Query(default=[]),
         tag_id: list[int] = Query(default=[]),
         session: Session = Depends(get_session),
@@ -109,6 +110,7 @@ def build_router(files_api: FilesAPI) -> APIRouter:
             files_api,
             page=page,
             size=size,
+            name=name,
             artist_ids=artist_id,
             tag_ids=tag_id,
         )
