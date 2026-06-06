@@ -8,15 +8,16 @@ interface ModalProps {
   onClose: () => void
   children: ReactNode
   footer?: ReactNode
+  wide?: boolean
 }
 
-export function Modal({ open, title, onClose, children, footer }: ModalProps) {
+export function Modal({ open, title, onClose, children, footer, wide = false }: ModalProps) {
   if (!open) return null
 
   return (
     <div className="modal-overlay" onClick={onClose} role="presentation">
       <div
-        className="modal"
+        className={`modal ${wide ? 'modal--wide' : ''}`.trim()}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"

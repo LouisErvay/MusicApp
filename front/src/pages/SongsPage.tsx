@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { createSong, deleteSong, listSongs, updateSong } from '../api/songs'
+import { listArtists } from '../api/artists'
+import {
+  createSong,
+  createSongsBulk,
+  deleteSong,
+  listSongs,
+  updateSong,
+} from '../api/songs'
+import { listTags } from '../api/tags'
 import { Alert } from '../components/Alert'
 import { AudioPlayer } from '../components/AudioPlayer'
 import { Button } from '../components/Button'
@@ -7,14 +15,19 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { DataTable } from '../components/DataTable'
 import type { Column } from '../components/DataTable'
 import { EmptyState } from '../components/EmptyState'
+import { FilterCheckboxList } from '../components/FilterCheckboxList'
 import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
+import { SongCreateForm } from '../components/SongCreateForm'
+import type { SongCreatePayload } from '../components/SongCreateForm'
 import { SongForm } from '../components/SongForm'
 import { usePagination } from '../hooks/usePagination'
-import type { Song } from '../types'
+import type { Artist, Song, Tag } from '../types'
 import { ApiError } from '../types'
+import { fetchAllPages } from '../utils/fetchAllPages'
 import { formatBytes, formatDate } from '../utils/format'
+import './SongsPage.css'
 
 export function SongsPage() {
   const { page, size, setPage, reset } = usePagination()
@@ -25,16 +38,45 @@ export function SongsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
+  const [allArtists, setAllArtists] = useState<Artist[]>([])
+  const [allTags, setAllTags] = useState<Tag[]>([])
+  const [filtersLoading, setFiltersLoading] = useState(true)
+  const [selectedArtistIds, setSelectedArtistIds] = useState<number[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
+
   const [createOpen, setCreateOpen] = useState(false)
   const [editSong, setEditSong] = useState<Song | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Song | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const hasFilters = selectedArtistIds.length > 0 || selectedTagIds.length > 0
+
+  const loadFilters = useCallback(async () => {
+    setFiltersLoading(true)
+    try {
+      const [artists, tags] = await Promise.all([
+        fetchAllPages(listArtists),
+        fetchAllPages(listTags),
+      ])
+      setAllArtists(artists)
+      setAllTags(tags)
+    } catch {
+      /* filtres optionnels — la liste principale affichera l'erreur si besoin */
+    } finally {
+      setFiltersLoading(false)
+    }
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listSongs(page, size)
+      const res = await listSongs({
+        page,
+        size,
+        artistIds: selectedArtistIds,
+        tagIds: selectedTagIds,
+      })
       setData(res.items)
       setPages(res.pages)
       setTotal(res.total)
@@ -43,23 +85,57 @@ export function SongsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, size])
+  }, [page, size, selectedArtistIds, selectedTagIds])
+
+  useEffect(() => {
+    void loadFilters()
+  }, [loadFilters])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  async function handleCreate(name: string, file: File | null) {
-    if (!file) return
+  function handleFilterArtists(ids: number[]) {
+    setSelectedArtistIds(ids)
+    reset()
+    setPage(1)
+  }
+
+  function handleFilterTags(ids: number[]) {
+    setSelectedTagIds(ids)
+    reset()
+    setPage(1)
+  }
+
+  function clearFilters() {
+    setSelectedArtistIds([])
+    setSelectedTagIds([])
+    reset()
+    setPage(1)
+  }
+
+  async function handleCreate({ entries, artists, tags }: SongCreatePayload) {
     setSubmitting(true)
     setError(null)
     try {
-      await createSong(name, file)
+      if (entries.length === 1) {
+        await createSong(entries[0].name, entries[0].file, { artists, tags })
+        setSuccess('Chanson ajoutée.')
+      } else {
+        const files = entries.map((e) => e.file)
+        const items = entries.map((entry, index) => ({
+          name: entry.name,
+          file_index: index,
+          artist: artists,
+          tag: tags,
+        }))
+        const res = await createSongsBulk(items, files)
+        setSuccess(`${res.created} chanson${res.created > 1 ? 's' : ''} ajoutée${res.created > 1 ? 's' : ''}.`)
+      }
       setCreateOpen(false)
-      setSuccess('Chanson ajoutée.')
       reset()
       setPage(1)
-      await load()
+      await Promise.all([load(), loadFilters()])
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Erreur lors de la création.')
     } finally {
@@ -98,6 +174,16 @@ export function SongsPage() {
       setSubmitting(false)
     }
   }
+
+  const artistFilterItems = useMemo(
+    () => allArtists.map((a) => ({ id: a.id, label: a.username })),
+    [allArtists],
+  )
+
+  const tagFilterItems = useMemo(
+    () => allTags.map((t) => ({ id: t.id, label: t.name })),
+    [allTags],
+  )
 
   const columns = useMemo<Column<Song>[]>(
     () => [
@@ -147,13 +233,17 @@ export function SongsPage() {
     [],
   )
 
+  const emptyDescription = hasFilters
+    ? 'Aucune chanson ne correspond aux filtres sélectionnés.'
+    : 'Commencez par importer un fichier audio.'
+
   return (
-    <div>
+    <div className="songs-page">
       <PageHeader
         title="Chansons"
-        description="Gérez le catalogue audio : upload, renommage et suppression."
+        description="Gérez le catalogue audio : upload, filtres par artiste/tag, renommage et suppression."
         actions={
-          <Button onClick={() => setCreateOpen(true)}>+ Ajouter une chanson</Button>
+          <Button onClick={() => setCreateOpen(true)}>+ Ajouter des chansons</Button>
         }
       />
 
@@ -168,25 +258,73 @@ export function SongsPage() {
         </Alert>
       ) : null}
 
-      {!loading && data.length === 0 ? (
-        <EmptyState
-          icon="♫"
-          title="Aucune chanson"
-          description="Commencez par importer un fichier audio."
-          action={<Button onClick={() => setCreateOpen(true)}>Ajouter une chanson</Button>}
-        />
-      ) : (
-        <>
-          <DataTable columns={columns} data={data} keyExtractor={(r) => r.id} loading={loading} />
-          <Pagination page={page} pages={pages} total={total} onPageChange={setPage} />
-        </>
-      )}
+      <div className="songs-page__body">
+        <aside className="songs-page__filters">
+          <div className="songs-page__filters-header">
+            <h2 className="songs-page__filters-title">Filtres</h2>
+            {hasFilters ? (
+              <Button variant="ghost" onClick={clearFilters}>
+                Effacer
+              </Button>
+            ) : null}
+          </div>
 
-      <Modal open={createOpen} title="Nouvelle chanson" onClose={() => setCreateOpen(false)}>
-        <SongForm
+          <FilterCheckboxList
+            title="Artistes"
+            items={artistFilterItems}
+            selected={selectedArtistIds}
+            onChange={handleFilterArtists}
+            loading={filtersLoading}
+          />
+
+          <FilterCheckboxList
+            title="Tags"
+            items={tagFilterItems}
+            selected={selectedTagIds}
+            onChange={handleFilterTags}
+            loading={filtersLoading}
+          />
+        </aside>
+
+        <div className="songs-page__main">
+          {!loading && data.length === 0 ? (
+            <EmptyState
+              icon="♫"
+              title="Aucune chanson"
+              description={emptyDescription}
+              action={
+                hasFilters ? (
+                  <Button variant="secondary" onClick={clearFilters}>
+                    Réinitialiser les filtres
+                  </Button>
+                ) : (
+                  <Button onClick={() => setCreateOpen(true)}>Ajouter des chansons</Button>
+                )
+              }
+            />
+          ) : (
+            <>
+              <DataTable
+                columns={columns}
+                data={data}
+                keyExtractor={(r) => r.id}
+                loading={loading}
+              />
+              <Pagination page={page} pages={pages} total={total} onPageChange={setPage} />
+            </>
+          )}
+        </div>
+      </div>
+
+      <Modal
+        open={createOpen}
+        title="Nouvelles chansons"
+        wide
+        onClose={() => setCreateOpen(false)}
+      >
+        <SongCreateForm
           loading={submitting}
-          submitLabel="Importer"
-          onSubmit={handleCreate}
+          onSubmit={(payload) => void handleCreate(payload)}
           onCancel={() => setCreateOpen(false)}
         />
       </Modal>

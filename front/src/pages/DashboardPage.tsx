@@ -23,7 +23,7 @@ export function DashboardPage() {
     setError(null)
     try {
       const [songs, artists, tags] = await Promise.all([
-        listSongs(1, 1),
+        listSongs({ page: 1, size: 1 }),
         listArtists(1, 1),
         listTags(1, 1),
       ])

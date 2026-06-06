@@ -32,6 +32,18 @@ export interface SongUpdate {
   name?: string
 }
 
+export interface SongBulkCreateItem {
+  name: string
+  file_index: number
+  artist: string[]
+  tag: string[]
+}
+
+export interface SongBulkRead {
+  items: Song[]
+  created: number
+}
+
 export interface Artist {
   id: number
   username: string

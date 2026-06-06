@@ -1,0 +1,47 @@
+.songs-page__body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.songs-page__filters {
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.songs-page__filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.songs-page__filters-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.songs-page__main {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .songs-page__body {
+    grid-template-columns: 1fr;
+  }
+
+  .songs-page__filters {
+    position: static;
+  }
+}

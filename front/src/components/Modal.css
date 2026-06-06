@@ -20,6 +20,10 @@
   box-shadow: var(--shadow-lg);
 }
 
+.modal--wide {
+  width: min(640px, 100%);
+}
+
 .modal__header {
   display: flex;
   align-items: center;
