@@ -8,6 +8,7 @@ from src.core.psql_db import get_health, get_session
 
 from fastapi_files import register_plugin
 
+from src.endpoints import ept_artist, ept_tag
 from src.endpoints.ept_song import build_router
 
 
@@ -20,13 +21,14 @@ plugin = register_plugin(
     session_factory=psql_db.SessionLocal,
     volume="./data/files",
     prefix="/files",
-    endpoints="all",
     max_upload_size=50 * 1024 * 1024,
     auto_migrate=True,
 )
 run_app_migrations(psql_db.get_engine())
 
 app.include_router(build_router(plugin.api))
+app.include_router(ept_artist.router)
+app.include_router(ept_tag.router)
 
 @app.get("/health")
 def health():

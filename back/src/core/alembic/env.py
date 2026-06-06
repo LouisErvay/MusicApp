@@ -7,7 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 from src.core.config import config as app_config
 from src.core.psql_db import Base
-from src.models import mod_song  # noqa: F401 — enregistre Song (+ table file du plugin)
+from src.models import mod_artist, mod_song, mod_tag  # noqa: F401 — enregistre les modèles
 
 config = context.config
 
