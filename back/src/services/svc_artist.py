@@ -23,6 +23,16 @@ def _require(session: Session, artist_id: int) -> Artist:
     return artist
 
 
+def get_or_create(session: Session, username: str) -> Artist:
+    artist = session.scalar(select(Artist).where(Artist.username == username))
+    if artist is not None:
+        return artist
+    artist = Artist(username=username)
+    session.add(artist)
+    session.flush()
+    return artist
+
+
 def create(session: Session, payload: ArtistCreate) -> ArtistRead:
     artist = Artist(username=payload.username)
     session.add(artist)

@@ -23,6 +23,16 @@ def _require(session: Session, tag_id: int) -> Tag:
     return tag
 
 
+def get_or_create(session: Session, name: str) -> Tag:
+    tag = session.scalar(select(Tag).where(Tag.name == name))
+    if tag is not None:
+        return tag
+    tag = Tag(name=name)
+    session.add(tag)
+    session.flush()
+    return tag
+
+
 def create(session: Session, payload: TagCreate) -> TagRead:
     tag = Tag(name=payload.name)
     session.add(tag)
