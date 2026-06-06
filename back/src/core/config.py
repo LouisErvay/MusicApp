@@ -20,7 +20,7 @@ def _env(key: str, default: str | None = None) -> str | None:
 
 
 @dataclass(frozen=True)
-class Settings:
+class Config:
     API_PORT: int = int(_env("API_PORT", "8000") or 8000)
     API_URL: str = _env("API_URL", f"http://localhost:{API_PORT}") or f"http://localhost:{API_PORT}"
 
@@ -32,7 +32,7 @@ class Settings:
     POSTGRES_HOST: str = _env("POSTGRES_HOST", "localhost") or "localhost"
 
     @property
-    def sqlalchemy_database_url(self) -> str:
+    def sqlalchemy_psql_db_url(self) -> str:
         """
         Retourne une URL compatible SQLAlchemy.
         - Accepte POSTGRES_URL si déjà au bon format.
@@ -51,4 +51,4 @@ class Settings:
         return f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
 
-settings = Settings()
+config = Config()

@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from src.settings import settings
+from src.core.config import config
 
 _engine = None
 SessionLocal = None
@@ -27,7 +27,7 @@ def get_health():
 
 def _build_engine():
     """Construit l'engin SQLAlchemy."""
-    return create_engine(settings.sqlalchemy_database_url, pool_pre_ping=True, future=True)
+    return create_engine(config.sqlalchemy_psql_db_url, pool_pre_ping=True, future=True)
 
 
 def get_engine():

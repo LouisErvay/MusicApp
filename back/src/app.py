@@ -2,19 +2,19 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from src.orm import database
-from src.orm.database import get_health, get_session
+from src.core import psql_db
+from src.core.psql_db import get_health, get_session
 
 from fastapi_files import register_plugin
 
 
 app = FastAPI(title="Music Platform API")
 
-database._ensure_session_factory()
+psql_db._ensure_session_factory()
 
 plugin = register_plugin(
     app,
-    session_factory=database.SessionLocal,
+    session_factory=psql_db.SessionLocal,
     volume="./data/files",
     prefix="/files",
     endpoints="all",
