@@ -351,7 +351,7 @@ export function SongsPage() {
                 keyExtractor={(r) => r.id}
                 loading={loading}
               />
-              <Pagination page={page} pages={pages} total={total} onPageChange={setPage} />
+              <Pagination page={page} pages={pages} pageSize={size} total={total} onPageChange={setPage} />
             </>
           )}
         </div>
