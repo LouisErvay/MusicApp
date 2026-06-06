@@ -1,0 +1,28 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+}
+
+.page-header__desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.page-header__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

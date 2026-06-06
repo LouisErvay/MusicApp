@@ -1,0 +1,16 @@
+.audio-player {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.audio-player__label {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.audio-player__el {
+  width: 100%;
+  max-width: 280px;
+  height: 2rem;
+}

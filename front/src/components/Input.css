@@ -1,0 +1,59 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.field__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.field__input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.field__input--error {
+  border-color: var(--danger-border);
+}
+
+.field__error {
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+
+.field--file .field__file {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.field--file .field__file::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-h);
+  font: inherit;
+  cursor: pointer;
+}
+
+.field--file .field__file::file-selector-button:hover {
+  background: var(--surface-3);
+}
