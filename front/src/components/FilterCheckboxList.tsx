@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { SearchInput } from './SearchInput'
 import './FilterCheckboxList.css'
 
 export interface FilterItem {
@@ -11,7 +11,10 @@ interface FilterCheckboxListProps {
   items: FilterItem[]
   selected: number[]
   onChange: (selected: number[]) => void
+  searchValue: string
+  onSearchChange: (value: string) => void
   loading?: boolean
+  searchPlaceholder?: string
 }
 
 export function FilterCheckboxList({
@@ -19,16 +22,11 @@ export function FilterCheckboxList({
   items,
   selected,
   onChange,
+  searchValue,
+  onSearchChange,
   loading = false,
+  searchPlaceholder = 'Rechercher…',
 }: FilterCheckboxListProps) {
-  const [search, setSearch] = useState('')
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((item) => item.label.toLowerCase().includes(q))
-  }, [items, search])
-
   function toggle(id: number) {
     if (selected.includes(id)) {
       onChange(selected.filter((s) => s !== id))
@@ -40,23 +38,20 @@ export function FilterCheckboxList({
   return (
     <section className="filter-list">
       <h3 className="filter-list__title">{title}</h3>
-      <input
-        type="search"
-        className="filter-list__search"
-        placeholder="Rechercher…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+      <SearchInput
+        value={searchValue}
+        onChange={onSearchChange}
+        placeholder={searchPlaceholder}
         disabled={loading}
+        aria-label={`Rechercher ${title.toLowerCase()}`}
       />
       <div className="filter-list__items">
         {loading ? (
           <p className="filter-list__empty">Chargement…</p>
-        ) : filtered.length === 0 ? (
-          <p className="filter-list__empty">
-            {items.length === 0 ? 'Aucun élément' : 'Aucun résultat'}
-          </p>
+        ) : items.length === 0 ? (
+          <p className="filter-list__empty">Aucun résultat</p>
         ) : (
-          filtered.map((item) => (
+          items.map((item) => (
             <label key={item.id} className="filter-list__item">
               <input
                 type="checkbox"

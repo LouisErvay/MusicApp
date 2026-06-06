@@ -15,13 +15,17 @@ import { EmptyState } from '../components/EmptyState'
 import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
+import { SearchInput } from '../components/SearchInput'
 import { usePagination } from '../hooks/usePagination'
+import { useSearchQuery } from '../hooks/useSearchQuery'
 import type { Artist } from '../types'
 import { ApiError } from '../types'
 import { formatDate } from '../utils/format'
 
 export function ArtistsPage() {
   const { page, size, setPage, reset } = usePagination()
+  const search = useSearchQuery()
+
   const [data, setData] = useState<Artist[]>([])
   const [pages, setPages] = useState(0)
   const [total, setTotal] = useState(0)
@@ -34,11 +38,17 @@ export function ArtistsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Artist | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const hasSearch = search.apiQuery !== undefined
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listArtists(page, size)
+      const res = await listArtists({
+        page,
+        size,
+        username: search.apiQuery,
+      })
       setData(res.items)
       setPages(res.pages)
       setTotal(res.total)
@@ -47,11 +57,16 @@ export function ArtistsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, size])
+  }, [page, size, search.apiQuery])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    reset()
+    setPage(1)
+  }, [search.apiQuery, reset, setPage])
 
   async function handleCreate(username: string) {
     setSubmitting(true)
@@ -152,12 +167,32 @@ export function ArtistsPage() {
         </Alert>
       ) : null}
 
+      <SearchInput
+        className="list-toolbar__search"
+        value={search.value}
+        onChange={search.setValue}
+        placeholder="Rechercher un artiste…"
+        aria-label="Rechercher un artiste"
+      />
+
       {!loading && data.length === 0 ? (
         <EmptyState
           icon="◎"
           title="Aucun artiste"
-          description="Ajoutez votre premier artiste au catalogue."
-          action={<Button onClick={() => setCreateOpen(true)}>Ajouter un artiste</Button>}
+          description={
+            hasSearch
+              ? 'Aucun artiste ne correspond à votre recherche.'
+              : 'Ajoutez votre premier artiste au catalogue.'
+          }
+          action={
+            hasSearch ? (
+              <Button variant="secondary" onClick={() => search.setValue('')}>
+                Effacer la recherche
+              </Button>
+            ) : (
+              <Button onClick={() => setCreateOpen(true)}>Ajouter un artiste</Button>
+            )
+          }
         />
       ) : (
         <>

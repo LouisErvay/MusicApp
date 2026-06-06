@@ -83,3 +83,38 @@
   font-size: 0.75rem;
   color: var(--text);
 }
+
+.string-list__suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.string-list__suggestion {
+  padding: 0.4rem 0.55rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.string-list__suggestion:hover:not(:disabled) {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.string-list__suggestion-empty {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.82rem;
+  color: var(--text);
+}

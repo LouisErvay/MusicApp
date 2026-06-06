@@ -9,14 +9,18 @@ import { EmptyState } from '../components/EmptyState'
 import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
+import { SearchInput } from '../components/SearchInput'
 import { TagForm } from '../components/TagForm'
 import { usePagination } from '../hooks/usePagination'
+import { useSearchQuery } from '../hooks/useSearchQuery'
 import type { Tag } from '../types'
 import { ApiError } from '../types'
 import { formatDate } from '../utils/format'
 
 export function TagsPage() {
   const { page, size, setPage, reset } = usePagination()
+  const search = useSearchQuery()
+
   const [data, setData] = useState<Tag[]>([])
   const [pages, setPages] = useState(0)
   const [total, setTotal] = useState(0)
@@ -29,11 +33,17 @@ export function TagsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Tag | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
+  const hasSearch = search.apiQuery !== undefined
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listTags(page, size)
+      const res = await listTags({
+        page,
+        size,
+        name: search.apiQuery,
+      })
       setData(res.items)
       setPages(res.pages)
       setTotal(res.total)
@@ -42,11 +52,16 @@ export function TagsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, size])
+  }, [page, size, search.apiQuery])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    reset()
+    setPage(1)
+  }, [search.apiQuery, reset, setPage])
 
   async function handleCreate(name: string) {
     setSubmitting(true)
@@ -102,9 +117,7 @@ export function TagsPage() {
       {
         key: 'name',
         header: 'Nom',
-        render: (row) => (
-          <span className="tag-badge">{row.name}</span>
-        ),
+        render: (row) => <span className="tag-badge">{row.name}</span>,
       },
       {
         key: 'updated',
@@ -149,12 +162,32 @@ export function TagsPage() {
         </Alert>
       ) : null}
 
+      <SearchInput
+        className="list-toolbar__search"
+        value={search.value}
+        onChange={search.setValue}
+        placeholder="Rechercher un tag…"
+        aria-label="Rechercher un tag"
+      />
+
       {!loading && data.length === 0 ? (
         <EmptyState
           icon="◈"
           title="Aucun tag"
-          description="Créez des tags pour catégoriser vos contenus."
-          action={<Button onClick={() => setCreateOpen(true)}>Ajouter un tag</Button>}
+          description={
+            hasSearch
+              ? 'Aucun tag ne correspond à votre recherche.'
+              : 'Créez des tags pour catégoriser vos contenus.'
+          }
+          action={
+            hasSearch ? (
+              <Button variant="secondary" onClick={() => search.setValue('')}>
+                Effacer la recherche
+              </Button>
+            ) : (
+              <Button onClick={() => setCreateOpen(true)}>Ajouter un tag</Button>
+            )
+          }
         />
       ) : (
         <>

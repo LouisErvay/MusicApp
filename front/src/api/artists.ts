@@ -4,10 +4,25 @@ import type {
   ArtistPage,
   ArtistUpdate,
 } from '../types'
+import { appendPagination, appendSearchParam } from './query'
 import { apiFetch } from './client'
 
-export function listArtists(page = 1, size = 20): Promise<ArtistPage> {
-  return apiFetch<ArtistPage>(`/artists/?page=${page}&size=${size}`)
+export interface ListArtistsParams {
+  page?: number
+  size?: number
+  username?: string
+}
+
+function buildArtistsQuery(params: ListArtistsParams): string {
+  const { page = 1, size = 20, username } = params
+  const qs = new URLSearchParams()
+  appendPagination(qs, page, size)
+  appendSearchParam(qs, 'username', username)
+  return qs.toString()
+}
+
+export function listArtists(params: ListArtistsParams = {}): Promise<ArtistPage> {
+  return apiFetch<ArtistPage>(`/artists/?${buildArtistsQuery(params)}`)
 }
 
 export function getArtist(id: number): Promise<Artist> {

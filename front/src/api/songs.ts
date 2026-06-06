@@ -1,18 +1,20 @@
 import type { Song, SongBulkCreateItem, SongBulkRead, SongPage, SongUpdate } from '../types'
+import { appendPagination, appendSearchParam } from './query'
 import { apiFetch, apiFetchForm } from './client'
 
 export interface ListSongsParams {
   page?: number
   size?: number
+  name?: string
   artistIds?: number[]
   tagIds?: number[]
 }
 
 function buildSongsQuery(params: ListSongsParams): string {
-  const { page = 1, size = 20, artistIds = [], tagIds = [] } = params
+  const { page = 1, size = 20, name, artistIds = [], tagIds = [] } = params
   const qs = new URLSearchParams()
-  qs.set('page', String(page))
-  qs.set('size', String(size))
+  appendPagination(qs, page, size)
+  appendSearchParam(qs, 'name', name)
   for (const id of artistIds) qs.append('artist_id', String(id))
   for (const id of tagIds) qs.append('tag_id', String(id))
   return qs.toString()

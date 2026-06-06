@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
+import { listArtists } from '../api/artists'
+import { listTags } from '../api/tags'
 import { nameWithoutExtension } from '../utils/fileName'
 import { Button } from './Button'
 import { Input } from './Input'
@@ -27,6 +29,20 @@ export function SongCreateForm({ loading = false, onSubmit, onCancel }: SongCrea
   const [artists, setArtists] = useState<string[]>([])
   const [tags, setTags] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  const fetchArtistSuggestions = useCallback(
+    (query: string) =>
+      listArtists({ username: query, size: 20 }).then((res) =>
+        res.items.map((a) => a.username),
+      ),
+    [],
+  )
+
+  const fetchTagSuggestions = useCallback(
+    (query: string) =>
+      listTags({ name: query, size: 20 }).then((res) => res.items.map((t) => t.name)),
+    [],
+  )
 
   function handleFilesSelected(fileList: FileList | null) {
     if (!fileList || fileList.length === 0) return
@@ -135,6 +151,7 @@ export function SongCreateForm({ loading = false, onSubmit, onCancel }: SongCrea
         onChange={setArtists}
         placeholder="Ex. Daft Punk"
         disabled={loading}
+        fetchSuggestions={fetchArtistSuggestions}
       />
 
       <StringListInput
@@ -143,6 +160,7 @@ export function SongCreateForm({ loading = false, onSubmit, onCancel }: SongCrea
         onChange={setTags}
         placeholder="Ex. electro"
         disabled={loading}
+        fetchSuggestions={fetchTagSuggestions}
       />
 
       <div className="entity-form__actions">

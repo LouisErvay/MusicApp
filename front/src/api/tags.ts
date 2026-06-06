@@ -1,8 +1,23 @@
 import type { Tag, TagCreate, TagPage, TagUpdate } from '../types'
+import { appendPagination, appendSearchParam } from './query'
 import { apiFetch } from './client'
 
-export function listTags(page = 1, size = 20): Promise<TagPage> {
-  return apiFetch<TagPage>(`/tags/?page=${page}&size=${size}`)
+export interface ListTagsParams {
+  page?: number
+  size?: number
+  name?: string
+}
+
+function buildTagsQuery(params: ListTagsParams): string {
+  const { page = 1, size = 20, name } = params
+  const qs = new URLSearchParams()
+  appendPagination(qs, page, size)
+  appendSearchParam(qs, 'name', name)
+  return qs.toString()
+}
+
+export function listTags(params: ListTagsParams = {}): Promise<TagPage> {
+  return apiFetch<TagPage>(`/tags/?${buildTagsQuery(params)}`)
 }
 
 export function getTag(id: number): Promise<Tag> {

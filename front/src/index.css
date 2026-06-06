@@ -151,7 +151,11 @@ h3 {
   line-height: 1;
 }
 
-.tag-badge {
+.list-toolbar__search {
+  margin-bottom: 1rem;
+  max-width: 360px;
+}
+
   display: inline-block;
   padding: 0.2rem 0.65rem;
   border-radius: 999px;

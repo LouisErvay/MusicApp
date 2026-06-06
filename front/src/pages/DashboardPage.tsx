@@ -24,8 +24,8 @@ export function DashboardPage() {
     try {
       const [songs, artists, tags] = await Promise.all([
         listSongs({ page: 1, size: 1 }),
-        listArtists(1, 1),
-        listTags(1, 1),
+        listArtists({ page: 1, size: 1 }),
+        listTags({ page: 1, size: 1 }),
       ])
       setStats({
         songs: songs.total,

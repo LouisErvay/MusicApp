@@ -19,10 +19,12 @@ import { FilterCheckboxList } from '../components/FilterCheckboxList'
 import { Modal } from '../components/Modal'
 import { PageHeader } from '../components/PageHeader'
 import { Pagination } from '../components/Pagination'
+import { SearchInput } from '../components/SearchInput'
 import { SongCreateForm } from '../components/SongCreateForm'
 import type { SongCreatePayload } from '../components/SongCreateForm'
 import { SongForm } from '../components/SongForm'
 import { usePagination } from '../hooks/usePagination'
+import { useSearchQuery } from '../hooks/useSearchQuery'
 import type { Artist, Song, Tag } from '../types'
 import { ApiError } from '../types'
 import { fetchAllPages } from '../utils/fetchAllPages'
@@ -31,6 +33,10 @@ import './SongsPage.css'
 
 export function SongsPage() {
   const { page, size, setPage, reset } = usePagination()
+  const songSearch = useSearchQuery()
+  const artistSearch = useSearchQuery()
+  const tagSearch = useSearchQuery()
+
   const [data, setData] = useState<Song[]>([])
   const [pages, setPages] = useState(0)
   const [total, setTotal] = useState(0)
@@ -38,8 +44,8 @@ export function SongsPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const [allArtists, setAllArtists] = useState<Artist[]>([])
-  const [allTags, setAllTags] = useState<Tag[]>([])
+  const [filterArtists, setFilterArtists] = useState<Artist[]>([])
+  const [filterTags, setFilterTags] = useState<Tag[]>([])
   const [filtersLoading, setFiltersLoading] = useState(true)
   const [selectedArtistIds, setSelectedArtistIds] = useState<number[]>([])
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
@@ -49,23 +55,31 @@ export function SongsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Song | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const hasFilters = selectedArtistIds.length > 0 || selectedTagIds.length > 0
+  const hasFilters =
+    songSearch.apiQuery !== undefined ||
+    selectedArtistIds.length > 0 ||
+    selectedTagIds.length > 0
 
   const loadFilters = useCallback(async () => {
     setFiltersLoading(true)
     try {
       const [artists, tags] = await Promise.all([
-        fetchAllPages(listArtists),
-        fetchAllPages(listTags),
+        artistSearch.apiQuery
+          ? listArtists({ username: artistSearch.apiQuery, size: 100 }).then((r) => r.items)
+          : fetchAllPages((p, s) => listArtists({ page: p, size: s })),
+        tagSearch.apiQuery
+          ? listTags({ name: tagSearch.apiQuery, size: 100 }).then((r) => r.items)
+          : fetchAllPages((p, s) => listTags({ page: p, size: s })),
       ])
-      setAllArtists(artists)
-      setAllTags(tags)
+      setFilterArtists(artists)
+      setFilterTags(tags)
     } catch {
-      /* filtres optionnels — la liste principale affichera l'erreur si besoin */
+      setFilterArtists([])
+      setFilterTags([])
     } finally {
       setFiltersLoading(false)
     }
-  }, [])
+  }, [artistSearch.apiQuery, tagSearch.apiQuery])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -74,6 +88,7 @@ export function SongsPage() {
       const res = await listSongs({
         page,
         size,
+        name: songSearch.apiQuery,
         artistIds: selectedArtistIds,
         tagIds: selectedTagIds,
       })
@@ -85,7 +100,7 @@ export function SongsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, size, selectedArtistIds, selectedTagIds])
+  }, [page, size, songSearch.apiQuery, selectedArtistIds, selectedTagIds])
 
   useEffect(() => {
     void loadFilters()
@@ -94,6 +109,11 @@ export function SongsPage() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    reset()
+    setPage(1)
+  }, [songSearch.apiQuery, reset, setPage])
 
   function handleFilterArtists(ids: number[]) {
     setSelectedArtistIds(ids)
@@ -108,10 +128,17 @@ export function SongsPage() {
   }
 
   function clearFilters() {
+    songSearch.setValue('')
+    artistSearch.setValue('')
+    tagSearch.setValue('')
     setSelectedArtistIds([])
     setSelectedTagIds([])
     reset()
     setPage(1)
+  }
+
+  async function reloadAfterMutation() {
+    await Promise.all([load(), loadFilters()])
   }
 
   async function handleCreate({ entries, artists, tags }: SongCreatePayload) {
@@ -135,7 +162,7 @@ export function SongsPage() {
       setCreateOpen(false)
       reset()
       setPage(1)
-      await Promise.all([load(), loadFilters()])
+      await reloadAfterMutation()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Erreur lors de la création.')
     } finally {
@@ -176,13 +203,13 @@ export function SongsPage() {
   }
 
   const artistFilterItems = useMemo(
-    () => allArtists.map((a) => ({ id: a.id, label: a.username })),
-    [allArtists],
+    () => filterArtists.map((a) => ({ id: a.id, label: a.username })),
+    [filterArtists],
   )
 
   const tagFilterItems = useMemo(
-    () => allTags.map((t) => ({ id: t.id, label: t.name })),
-    [allTags],
+    () => filterTags.map((t) => ({ id: t.id, label: t.name })),
+    [filterTags],
   )
 
   const columns = useMemo<Column<Song>[]>(
@@ -234,7 +261,7 @@ export function SongsPage() {
   )
 
   const emptyDescription = hasFilters
-    ? 'Aucune chanson ne correspond aux filtres sélectionnés.'
+    ? 'Aucune chanson ne correspond aux critères de recherche.'
     : 'Commencez par importer un fichier audio.'
 
   return (
@@ -274,7 +301,10 @@ export function SongsPage() {
             items={artistFilterItems}
             selected={selectedArtistIds}
             onChange={handleFilterArtists}
+            searchValue={artistSearch.value}
+            onSearchChange={artistSearch.setValue}
             loading={filtersLoading}
+            searchPlaceholder="Filtrer par artiste…"
           />
 
           <FilterCheckboxList
@@ -282,11 +312,22 @@ export function SongsPage() {
             items={tagFilterItems}
             selected={selectedTagIds}
             onChange={handleFilterTags}
+            searchValue={tagSearch.value}
+            onSearchChange={tagSearch.setValue}
             loading={filtersLoading}
+            searchPlaceholder="Filtrer par tag…"
           />
         </aside>
 
         <div className="songs-page__main">
+          <SearchInput
+            className="songs-page__search"
+            value={songSearch.value}
+            onChange={songSearch.setValue}
+            placeholder="Rechercher une chanson…"
+            aria-label="Rechercher une chanson"
+          />
+
           {!loading && data.length === 0 ? (
             <EmptyState
               icon="♫"
