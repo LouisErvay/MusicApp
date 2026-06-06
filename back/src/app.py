@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from src.ORM import database
-from src.ORM.database import get_health, get_session
+from src.orm import database
+from src.orm.database import get_health, get_session
 
-from fastapi_files import FilesEndpoint, register_plugin
-from fastapi import UploadFile
-from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi_files import register_plugin
 
-app = FastAPI(title="File Browser API")
+
+app = FastAPI(title="Music Platform API")
 
 database._ensure_session_factory()
 
@@ -23,15 +21,6 @@ plugin = register_plugin(
     max_upload_size=50 * 1024 * 1024,
     auto_migrate=True,
 )
-
-@app.post("/documents")
-def create_document(file: UploadFile, session: Session = Depends(get_session)):
-    return plugin.api.upload(
-        session,
-        filename=file.filename,
-        stream=file.file,
-        mime=file.content_type,
-    )
 
 @app.get("/health")
 def health():
