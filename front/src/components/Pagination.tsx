@@ -15,7 +15,7 @@ export function Pagination({ page, pages, pageSize, total, onPageChange }: Pagin
   return (
     <nav className="pagination" aria-label="Pagination">
       <span className="pagination__info">
-        {total}/{pageSize} élément{total > 1 ? 's' : ''} · page {page}/{pages}
+        {pageSize*(page-1)}-{pageSize*page > total ? total : pageSize*page}/{total} élément{total > 1 ? 's' : ''} · page {page}/{pages}
       </span>
       <div className="pagination__controls">
         <Button variant="secondary" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
