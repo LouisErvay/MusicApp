@@ -25,7 +25,13 @@ def _require(session: Session, song_id: int) -> Song:
 
 def _to_read(session: Session, files_api: FilesAPI, song: Song) -> SongRead:
     file = files_api.get_file(session, song.file_id)
-    return SongRead.model_validate(song).model_copy(update={"file": file})
+    return SongRead.model_validate(song).model_copy(
+        update={
+            "file": file,
+            "artist": [artist.username for artist in song.artists],
+            "tag": [tag.name for tag in song.tags],
+        }
+    )
 
 
 def _normalize_names(names: list[str] | None) -> list[str]:
@@ -126,6 +132,15 @@ def update(
     song = _require(session, song_id)
     if payload.name is not None:
         song.name = payload.name
+    if payload.artist is not None:
+        song.artists = [
+            svc_artist.get_or_create(session, username)
+            for username in _normalize_names(payload.artist)
+        ]
+    if payload.tag is not None:
+        song.tags = [
+            svc_tag.get_or_create(session, name) for name in _normalize_names(payload.tag)
+        ]
     session.add(song)
     session.flush()
     return _to_read(session, files_api, song)

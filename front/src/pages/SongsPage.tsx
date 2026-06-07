@@ -4,6 +4,7 @@ import {
   createSong,
   createSongsBulk,
   deleteSong,
+  getSong,
   listSongs,
   updateSong,
 } from '../api/songs'
@@ -23,6 +24,7 @@ import { SearchInput } from '../components/SearchInput'
 import { SongCreateForm } from '../components/SongCreateForm'
 import type { SongCreatePayload } from '../components/SongCreateForm'
 import { SongForm } from '../components/SongForm'
+import type { SongFormSubmitPayload } from '../components/SongForm'
 import { usePagination } from '../hooks/usePagination'
 import { useSearchQuery } from '../hooks/useSearchQuery'
 import type { Artist, Song, Tag } from '../types'
@@ -52,6 +54,8 @@ export function SongsPage() {
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editSong, setEditSong] = useState<Song | null>(null)
+  const [editDetail, setEditDetail] = useState<Song | null>(null)
+  const [editLoading, setEditLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Song | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -115,6 +119,36 @@ export function SongsPage() {
     setPage(1)
   }, [songSearch.apiQuery, reset, setPage])
 
+  useEffect(() => {
+    if (!editSong) {
+      setEditDetail(null)
+      setEditLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setEditLoading(true)
+    setEditDetail(null)
+
+    void getSong(editSong.id)
+      .then((song) => {
+        if (!cancelled) setEditDetail(song)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setEditSong(null)
+          setError(err instanceof ApiError ? err.message : 'Erreur lors du chargement de la chanson.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setEditLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [editSong])
+
   function handleFilterArtists(ids: number[]) {
     setSelectedArtistIds(ids)
     reset()
@@ -170,12 +204,16 @@ export function SongsPage() {
     }
   }
 
-  async function handleEdit(name: string) {
+  async function handleEdit({ name, artists, tags }: SongFormSubmitPayload) {
     if (!editSong) return
     setSubmitting(true)
     setError(null)
     try {
-      await updateSong(editSong.id, { name })
+      await updateSong(editSong.id, {
+        name,
+        ...(artists !== undefined ? { artist: artists } : {}),
+        ...(tags !== undefined ? { tag: tags } : {}),
+      })
       setEditSong(null)
       setSuccess('Chanson mise à jour.')
       await load()
@@ -372,17 +410,21 @@ export function SongsPage() {
 
       <Modal
         open={editSong !== null}
-        title="Renommer la chanson"
+        title="Modifier la chanson"
         onClose={() => setEditSong(null)}
       >
-        {editSong ? (
+        {editSong && editDetail ? (
           <SongForm
-            initialName={editSong.name}
+            initialName={editDetail.name}
+            initialArtists={editDetail.artist ?? []}
+            initialTags={editDetail.tag ?? []}
             requireFile={false}
-            loading={submitting}
-            onSubmit={(name) => void handleEdit(name)}
+            loading={submitting || editLoading}
+            onSubmit={(payload) => void handleEdit(payload)}
             onCancel={() => setEditSong(null)}
           />
+        ) : editSong ? (
+          <p className="muted">Chargement…</p>
         ) : null}
       </Modal>
 

@@ -1,18 +1,37 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { listArtists } from '../api/artists'
+import { listTags } from '../api/tags'
 import { Button } from './Button'
 import { FileInput, Input } from './Input'
+import { StringListInput } from './StringListInput'
+
+export interface SongFormSubmitPayload {
+  name: string
+  file: File | null
+  artists?: string[]
+  tags?: string[]
+}
 
 interface SongFormProps {
   initialName?: string
+  initialArtists?: string[]
+  initialTags?: string[]
   requireFile?: boolean
   loading?: boolean
   submitLabel?: string
-  onSubmit: (name: string, file: File | null) => void
+  onSubmit: (payload: SongFormSubmitPayload) => void
   onCancel?: () => void
+}
+
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false
+  return a.every((value, index) => value === b[index])
 }
 
 export function SongForm({
   initialName = '',
+  initialArtists = [],
+  initialTags = [],
   requireFile = true,
   loading = false,
   submitLabel = 'Enregistrer',
@@ -20,8 +39,32 @@ export function SongForm({
   onCancel,
 }: SongFormProps) {
   const [name, setName] = useState(initialName)
+  const [artists, setArtists] = useState(initialArtists)
+  const [tags, setTags] = useState(initialTags)
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setName(initialName)
+    setArtists(initialArtists)
+    setTags(initialTags)
+    setFile(null)
+    setError(null)
+  }, [initialName, initialArtists, initialTags])
+
+  const fetchArtistSuggestions = useCallback(
+    (query: string) =>
+      listArtists({ username: query, size: 20 }).then((res) =>
+        res.items.map((a) => a.username),
+      ),
+    [],
+  )
+
+  const fetchTagSuggestions = useCallback(
+    (query: string) =>
+      listTags({ name: query, size: 20 }).then((res) => res.items.map((t) => t.name)),
+    [],
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -35,7 +78,14 @@ export function SongForm({
       return
     }
     setError(null)
-    onSubmit(trimmed, file)
+
+    const payload: SongFormSubmitPayload = { name: trimmed, file }
+    if (!requireFile) {
+      if (!arraysEqual(artists, initialArtists)) payload.artists = artists
+      if (!arraysEqual(tags, initialTags)) payload.tags = tags
+    }
+
+    onSubmit(payload)
   }
 
   return (
@@ -55,7 +105,26 @@ export function SongForm({
           accept="audio/*"
           onFileChange={setFile}
         />
-      ) : null}
+      ) : (
+        <>
+          <StringListInput
+            label="Artistes"
+            values={artists}
+            onChange={setArtists}
+            placeholder="Ex. Daft Punk"
+            disabled={loading}
+            fetchSuggestions={fetchArtistSuggestions}
+          />
+          <StringListInput
+            label="Tags"
+            values={tags}
+            onChange={setTags}
+            placeholder="Ex. electro"
+            disabled={loading}
+            fetchSuggestions={fetchTagSuggestions}
+          />
+        </>
+      )}
       <div className="entity-form__actions">
         {onCancel ? (
           <Button type="button" variant="secondary" onClick={onCancel} disabled={loading}>

@@ -22,6 +22,8 @@ export interface Song {
   file_id: string
   updated_at: string
   file: FileRead | null
+  artist?: string[]
+  tag?: string[]
 }
 
 export interface SongPage extends PageMeta {
@@ -30,6 +32,8 @@ export interface SongPage extends PageMeta {
 
 export interface SongUpdate {
   name?: string
+  artist?: string[]
+  tag?: string[]
 }
 
 export interface SongBulkCreateItem {

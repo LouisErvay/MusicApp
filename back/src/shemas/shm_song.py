@@ -23,6 +23,8 @@ class SongCreate:
 
 class SongUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
+    artist: list[str] | None = None
+    tag: list[str] | None = None
 
 
 class SongRead(BaseModel):
@@ -33,6 +35,8 @@ class SongRead(BaseModel):
     file_id: uuid.UUID
     updated_at: datetime
     file: FileRead | None = None
+    artist: list[str] = Field(default_factory=list)
+    tag: list[str] = Field(default_factory=list)
 
 
 class SongPage(BaseModel):
