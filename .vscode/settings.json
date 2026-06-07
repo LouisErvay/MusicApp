@@ -7,9 +7,9 @@
             "port": 5432,
             "driver": "PostgreSQL",
             "name": "music_api",
-            "database": "music_api",
+            "database": "MusicAppWeb",
             "username": "postgres",
-            "password": "DFOg58r62"
+            "password": "pgadmin"
         }
     ]
 }

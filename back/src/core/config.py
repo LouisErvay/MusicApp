@@ -7,7 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]  # back/src -> back
+BASE_DIR = Path(__file__).resolve().parents[2]  # back/src -> back
 ENV_FILE = BASE_DIR / ".env"
 
 # Charge back/.env si présent (sans écraser les variables déjà définies)
