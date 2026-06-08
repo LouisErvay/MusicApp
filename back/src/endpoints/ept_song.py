@@ -11,6 +11,8 @@ from src.services.svc_song import SongNotFound
 from src.shemas.shm_song import (
     SongBulkCreateItem,
     SongBulkRead,
+    SongBulkUpdate,
+    SongBulkUpdateRead,
     SongCreate,
     SongPage,
     SongRead,
@@ -123,6 +125,14 @@ def build_router(files_api: FilesAPI) -> APIRouter:
             raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
         except FileNotFound as exc:
             raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+
+    @router.patch("/bulk", response_model=SongBulkUpdateRead)
+    def update_songs_bulk(
+        payload: SongBulkUpdate,
+        session: Session = Depends(get_session),
+    ) -> SongBulkUpdateRead:
+        updated = svc_song.update_bulk(session, files_api, payload)
+        return SongBulkUpdateRead(items=updated, updated=len(updated))
 
     @router.patch("/{song_id}", response_model=SongRead)
     def update_song(

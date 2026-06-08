@@ -23,8 +23,10 @@ class SongCreate:
 
 class SongUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=100)
-    artist: list[str] | None = None
-    tag: list[str] | None = None
+    artist_add: list[str] = Field(default_factory=list)
+    tag_add: list[str] = Field(default_factory=list)
+    artist_delete: list[int] = Field(default_factory=list)
+    tag_delete: list[int] = Field(default_factory=list)
 
 
 class SongRead(BaseModel):
@@ -57,3 +59,17 @@ class SongBulkCreateItem(BaseModel):
 class SongBulkRead(BaseModel):
     items: list[SongRead]
     created: int
+
+
+class SongBulkUpdate(BaseModel):
+    song_ids: list[int] = Field(min_length=1)
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    artist_add: list[str] = Field(default_factory=list)
+    tag_add: list[str] = Field(default_factory=list)
+    artist_delete: list[int] = Field(default_factory=list)
+    tag_delete: list[int] = Field(default_factory=list)
+
+
+class SongBulkUpdateRead(BaseModel):
+    items: list[SongRead]
+    updated: int

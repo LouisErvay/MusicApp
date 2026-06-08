@@ -9,7 +9,13 @@ from src.models.mod_artist import Artist
 from src.models.mod_song import Song
 from src.models.mod_tag import Tag
 from src.services import svc_artist, svc_tag
-from src.shemas.shm_song import SongCreate, SongPage, SongRead, SongUpdate
+from src.shemas.shm_song import (
+    SongBulkUpdate,
+    SongCreate,
+    SongPage,
+    SongRead,
+    SongUpdate,
+)
 
 
 class SongNotFound(Exception):
@@ -126,24 +132,61 @@ def get(session: Session, files_api: FilesAPI, song_id: int) -> SongRead:
     return _to_read(session, files_api, _require(session, song_id))
 
 
+def _apply_update(session: Session, song: Song, payload: SongUpdate) -> None:
+    if payload.name is not None:
+        song.name = payload.name
+    if payload.artist_add:
+        linked_usernames = {artist.username for artist in song.artists}
+        for username in _normalize_names(payload.artist_add):
+            if username in linked_usernames:
+                continue
+            song.artists.append(svc_artist.get_or_create(session, username))
+            linked_usernames.add(username)
+    if payload.tag_add:
+        linked_names = {tag.name for tag in song.tags}
+        for name in _normalize_names(payload.tag_add):
+            if name in linked_names:
+                continue
+            song.tags.append(svc_tag.get_or_create(session, name))
+            linked_names.add(name)
+    if payload.artist_delete:
+        ids_to_remove = set(payload.artist_delete)
+        song.artists = [artist for artist in song.artists if artist.id not in ids_to_remove]
+    if payload.tag_delete:
+        ids_to_remove = set(payload.tag_delete)
+        song.tags = [tag for tag in song.tags if tag.id not in ids_to_remove]
+
+
 def update(
     session: Session, files_api: FilesAPI, song_id: int, payload: SongUpdate
 ) -> SongRead:
     song = _require(session, song_id)
-    if payload.name is not None:
-        song.name = payload.name
-    if payload.artist is not None:
-        song.artists = [
-            svc_artist.get_or_create(session, username)
-            for username in _normalize_names(payload.artist)
-        ]
-    if payload.tag is not None:
-        song.tags = [
-            svc_tag.get_or_create(session, name) for name in _normalize_names(payload.tag)
-        ]
+    _apply_update(session, song, payload)
     session.add(song)
     session.flush()
     return _to_read(session, files_api, song)
+
+
+def update_bulk(
+    session: Session, files_api: FilesAPI, payload: SongBulkUpdate
+) -> list[SongRead]:
+    update_payload = SongUpdate(
+        name=payload.name,
+        artist_add=payload.artist_add,
+        tag_add=payload.tag_add,
+        artist_delete=payload.artist_delete,
+        tag_delete=payload.tag_delete,
+    )
+    updated: list[SongRead] = []
+    for song_id in payload.song_ids:
+        song = session.get(Song, song_id)
+        if song is None:
+            continue
+        _apply_update(session, song, update_payload)
+        session.add(song)
+        session.flush()
+        updated.append(_to_read(session, files_api, song))
+    return updated
 
 
 def delete(session: Session, files_api: FilesAPI, song_id: int) -> None:
