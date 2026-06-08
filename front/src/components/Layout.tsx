@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { SidebarPlayer } from './SidebarPlayer'
 import './Layout.css'
 
 const NAV = [
@@ -38,6 +39,9 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+        <div className="sidebar__player">
+          <SidebarPlayer />
+        </div>
       </aside>
       <main className="layout__main">
         <Outlet />

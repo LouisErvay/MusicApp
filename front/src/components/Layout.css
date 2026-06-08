@@ -8,7 +8,8 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  padding: 1.25rem 0.85rem;
+  height: 100svh;
+  padding: 1.25rem 0.85rem 0;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
 }
@@ -49,6 +50,19 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0.75rem;
+}
+
+.sidebar__player {
+  flex: 0 0 25%;
+  min-height: 10rem;
+  max-height: 25%;
+  margin: 0 -0.85rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
 }
 
 .sidebar__link {
@@ -93,11 +107,18 @@
 
   .sidebar {
     width: 100%;
-    flex-direction: row;
-    align-items: center;
-    padding: 0.75rem;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 0.75rem 0;
     gap: 0.5rem;
     overflow-x: auto;
+  }
+
+  .sidebar__player {
+    flex: 0 0 auto;
+    max-height: none;
+    margin: 0;
   }
 
   .sidebar__brand {

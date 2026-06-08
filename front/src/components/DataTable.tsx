@@ -3,7 +3,7 @@ import './DataTable.css'
 
 export interface Column<T> {
   key: string
-  header: string
+  header: ReactNode
   render: (row: T) => ReactNode
   className?: string
 }
@@ -13,9 +13,10 @@ interface DataTableProps<T> {
   data: T[]
   keyExtractor: (row: T) => string | number
   loading?: boolean
+  className?: string
 }
 
-export function DataTable<T>({ columns, data, keyExtractor, loading }: DataTableProps<T>) {
+export function DataTable<T>({ columns, data, keyExtractor, loading, className }: DataTableProps<T>) {
   if (loading) {
     return (
       <div className="data-table data-table--loading">
@@ -27,7 +28,7 @@ export function DataTable<T>({ columns, data, keyExtractor, loading }: DataTable
   }
 
   return (
-    <div className="data-table-wrap">
+    <div className={`data-table-wrap ${className ?? ''}`.trim()}>
       <table className="data-table">
         <thead>
           <tr>

@@ -42,6 +42,26 @@
   margin-left: 0.35rem;
 }
 
+.data-table td.actions .icon-btn + .icon-btn {
+  margin-left: 0;
+}
+
+.data-table__cell-truncate {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-table td.col-play,
+.data-table th.col-play {
+  width: 2.75rem;
+  padding-left: 0.65rem;
+  padding-right: 0.35rem;
+  text-align: center;
+}
+
 .data-table--loading {
   display: flex;
   flex-direction: column;

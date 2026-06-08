@@ -1,0 +1,120 @@
+.sidebar-player {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 0.75rem 1rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-player__title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text-h);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.sidebar-player__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sidebar-player__times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-player__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.sidebar-player__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sidebar-player__volume {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text);
+}
+
+.sidebar-player__volume svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.sidebar-player__speed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sidebar-player__speed-label {
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.sidebar-player__speed-select {
+  flex: 1;
+  max-width: 5.5rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.sidebar-player__speed-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sidebar-player__slider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.sidebar-player__slider:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sidebar-player__slider--progress {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-player__progress-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.35;
+  pointer-events: none;
+  transition: width 0.1s linear;
+}
