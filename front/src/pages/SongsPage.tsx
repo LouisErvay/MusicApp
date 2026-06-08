@@ -7,6 +7,7 @@ import {
   getSong,
   listSongs,
   updateSong,
+  updateSongsBulk,
 } from '../api/songs'
 import { listTags } from '../api/tags'
 import { fileDownloadUrl } from '../api/config'
@@ -24,6 +25,8 @@ import { SongPlayButton } from '../components/SongPlayButton'
 import { SongCreateForm } from '../components/SongCreateForm'
 import { SongDuration } from '../components/SongDuration'
 import type { SongCreatePayload } from '../components/SongCreateForm'
+import { SongBulkEditForm } from '../components/SongBulkEditForm'
+import type { SongBulkEditSubmitPayload } from '../components/SongBulkEditForm'
 import { SongForm } from '../components/SongForm'
 import type { SongFormSubmitPayload } from '../components/SongForm'
 import { TableColumnEntityFilterHeader } from '../components/TableColumnEntityFilterHeader'
@@ -35,6 +38,7 @@ import { ApiError } from '../types'
 import { fetchAllPages } from '../utils/fetchAllPages'
 import { formatDate } from '../utils/format'
 import { resolveSearchQuery } from '../utils/search'
+import { buildEntityNameMaps, buildSongUpdatePayload } from '../utils/songUpdate'
 import './SongsPage.css'
 
 function DownloadIcon() {
@@ -90,6 +94,10 @@ export function SongsPage() {
   const [editSong, setEditSong] = useState<Song | null>(null)
   const [editDetail, setEditDetail] = useState<Song | null>(null)
   const [editLoading, setEditLoading] = useState(false)
+  const [editEntityMaps, setEditEntityMaps] = useState<ReturnType<typeof buildEntityNameMaps> | null>(
+    null,
+  )
+  const [bulkEditOpen, setBulkEditOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Song | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -129,16 +137,25 @@ export function SongsPage() {
     if (!editSong) {
       setEditDetail(null)
       setEditLoading(false)
+      setEditEntityMaps(null)
       return
     }
 
     let cancelled = false
     setEditLoading(true)
     setEditDetail(null)
+    setEditEntityMaps(null)
 
-    void getSong(editSong.id)
-      .then((song) => {
-        if (!cancelled) setEditDetail(song)
+    void Promise.all([
+      getSong(editSong.id),
+      fetchAllPages((p, s) => listArtists({ page: p, size: s })),
+      fetchAllPages((p, s) => listTags({ page: p, size: s })),
+    ])
+      .then(([song, artists, tags]) => {
+        if (!cancelled) {
+          setEditDetail(song)
+          setEditEntityMaps(buildEntityNameMaps(artists, tags))
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -242,17 +259,44 @@ export function SongsPage() {
   }
 
   async function handleEdit({ name, artists, tags }: SongFormSubmitPayload) {
-    if (!editSong) return
+    if (!editSong || !editDetail || !editEntityMaps) return
     setSubmitting(true)
     setError(null)
     try {
-      await updateSong(editSong.id, {
-        name,
-        ...(artists !== undefined ? { artist: artists } : {}),
-        ...(tags !== undefined ? { tag: tags } : {}),
-      })
+      const payload = buildSongUpdatePayload(
+        {
+          name: editDetail.name,
+          artists: editDetail.artist ?? [],
+          tags: editDetail.tag ?? [],
+        },
+        { name, artists, tags },
+        editEntityMaps,
+      )
+      await updateSong(editSong.id, payload)
       setEditSong(null)
       setSuccess('Chanson mise à jour.')
+      await load()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Erreur lors de la mise à jour.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleBulkEdit(payload: SongBulkEditSubmitPayload) {
+    if (selectedIds.size === 0) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await updateSongsBulk({
+        song_ids: [...selectedIds],
+        ...payload,
+      })
+      setBulkEditOpen(false)
+      setSelectedIds(new Set())
+      setSuccess(
+        `${res.updated} chanson${res.updated > 1 ? 's' : ''} mise${res.updated > 1 ? 's' : ''} à jour.`,
+      )
       await load()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Erreur lors de la mise à jour.')
@@ -311,6 +355,7 @@ export function SongsPage() {
   const allOnPageSelected =
     data.length > 0 && data.every((song) => selectedIds.has(song.id))
   const someOnPageSelected = data.some((song) => selectedIds.has(song.id))
+  const selectedCount = selectedIds.size
 
   const columns = useMemo<Column<Song>[]>(
     () => [
@@ -323,16 +368,27 @@ export function SongsPage() {
       {
         key: 'select',
         header: (
-          <input
-            type="checkbox"
-            className="songs-page__checkbox"
-            checked={allOnPageSelected}
-            ref={(el) => {
-              if (el) el.indeterminate = someOnPageSelected && !allOnPageSelected
-            }}
-            onChange={toggleAllOnPage}
-            aria-label="Tout sélectionner sur cette page"
-          />
+          <div className="songs-page__select-header">
+            <input
+              type="checkbox"
+              className="songs-page__checkbox"
+              checked={allOnPageSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someOnPageSelected && !allOnPageSelected
+              }}
+              onChange={toggleAllOnPage}
+              aria-label="Tout sélectionner sur cette page"
+            />
+            <IconButton
+              className={`songs-page__bulk-edit-btn${selectedCount === 0 ? ' songs-page__bulk-edit-btn--hidden' : ''}`}
+              label="Modifier la sélection"
+              onClick={() => setBulkEditOpen(true)}
+              disabled={selectedCount === 0}
+              tabIndex={selectedCount === 0 ? -1 : undefined}
+            >
+              <EditIcon />
+            </IconButton>
+          </div>
         ),
         className: 'col-checkbox',
         render: (row) => (
@@ -435,6 +491,7 @@ export function SongsPage() {
     [
       allOnPageSelected,
       someOnPageSelected,
+      selectedCount,
       selectedIds,
       data,
       appliedName,
@@ -524,7 +581,7 @@ export function SongsPage() {
         title="Modifier la chanson"
         onClose={() => setEditSong(null)}
       >
-        {editSong && editDetail ? (
+        {editSong && editDetail && editEntityMaps ? (
           <SongForm
             initialName={editDetail.name}
             initialArtists={editDetail.artist ?? []}
@@ -536,6 +593,21 @@ export function SongsPage() {
           />
         ) : editSong ? (
           <p className="muted">Chargement…</p>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={bulkEditOpen}
+        title={`Modifier ${selectedCount} chanson${selectedCount > 1 ? 's' : ''}`}
+        onClose={() => setBulkEditOpen(false)}
+      >
+        {bulkEditOpen ? (
+          <SongBulkEditForm
+            selectedCount={selectedCount}
+            loading={submitting}
+            onSubmit={(payload) => void handleBulkEdit(payload)}
+            onCancel={() => setBulkEditOpen(false)}
+          />
         ) : null}
       </Modal>
 

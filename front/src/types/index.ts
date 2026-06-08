@@ -32,8 +32,24 @@ export interface SongPage extends PageMeta {
 
 export interface SongUpdate {
   name?: string
-  artist?: string[]
-  tag?: string[]
+  artist_add?: string[]
+  tag_add?: string[]
+  artist_delete?: number[]
+  tag_delete?: number[]
+}
+
+export interface SongBulkUpdate {
+  song_ids: number[]
+  name?: string
+  artist_add?: string[]
+  tag_add?: string[]
+  artist_delete?: number[]
+  tag_delete?: number[]
+}
+
+export interface SongBulkUpdateRead {
+  items: Song[]
+  updated: number
 }
 
 export interface SongBulkCreateItem {

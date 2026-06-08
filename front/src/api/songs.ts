@@ -1,4 +1,12 @@
-import type { Song, SongBulkCreateItem, SongBulkRead, SongPage, SongUpdate } from '../types'
+import type {
+  Song,
+  SongBulkCreateItem,
+  SongBulkRead,
+  SongBulkUpdate,
+  SongBulkUpdateRead,
+  SongPage,
+  SongUpdate,
+} from '../types'
 import { appendPagination, appendSearchParam } from './query'
 import { apiFetch, apiFetchForm } from './client'
 
@@ -58,6 +66,14 @@ export function createSongsBulk(
 
 export function updateSong(id: number, payload: SongUpdate): Promise<Song> {
   return apiFetch<Song>(`/songs/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateSongsBulk(payload: SongBulkUpdate): Promise<SongBulkUpdateRead> {
+  return apiFetch<SongBulkUpdateRead>('/songs/bulk', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
