@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { listArtists } from '../api/artists'
 import { listSongs } from '../api/songs'
 import { listTags } from '../api/tags'
-import { Alert } from '../components/Alert'
-import { Card } from '../components/Card'
-import { PageHeader } from '../components/PageHeader'
+import { Alert } from '../components/ui/Alert'
+import { Card } from '../components/ui/Card'
+import { PageHeader } from '../components/ui/PageHeader'
 import { ApiError } from '../types'
 
 interface Stats {

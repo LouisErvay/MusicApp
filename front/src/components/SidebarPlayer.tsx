@@ -1,7 +1,7 @@
 import { useAudioPlayer } from '../player/AudioPlayerContext'
 import { PLAYBACK_RATES, type PlaybackRate } from '../player/types'
 import { formatDuration } from '../utils/format'
-import { IconButton } from './IconButton'
+import { IconButton } from './ui/IconButton'
 import './SidebarPlayer.css'
 
 function PlayIcon() {

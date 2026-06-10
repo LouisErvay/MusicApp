@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { resolveSearchQuery } from '../utils/search'
-import { SearchInput } from './SearchInput'
+import { SearchInput } from './ui/SearchInput'
 import './StringListInput.css'
 
 interface StringListInputProps {

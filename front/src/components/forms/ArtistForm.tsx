@@ -1,30 +1,30 @@
 import { useState } from 'react'
-import { Button } from './Button'
-import { Input } from './Input'
+import { Button } from '../ui/Button'
+import { Input } from '../ui/Input'
 
-interface TagFormProps {
-  initialName?: string
+interface ArtistFormProps {
+  initialUsername?: string
   loading?: boolean
   submitLabel?: string
-  onSubmit: (name: string) => void
+  onSubmit: (username: string) => void
   onCancel?: () => void
 }
 
-export function TagForm({
-  initialName = '',
+export function ArtistForm({
+  initialUsername = '',
   loading = false,
   submitLabel = 'Enregistrer',
   onSubmit,
   onCancel,
-}: TagFormProps) {
-  const [name, setName] = useState(initialName)
+}: ArtistFormProps) {
+  const [username, setUsername] = useState(initialUsername)
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = name.trim()
+    const trimmed = username.trim()
     if (!trimmed) {
-      setError('Le nom est obligatoire.')
+      setError("Le nom d'utilisateur est obligatoire.")
       return
     }
     setError(null)
@@ -35,9 +35,9 @@ export function TagForm({
     <form onSubmit={handleSubmit} className="entity-form">
       {error ? <p className="entity-form__error">{error}</p> : null}
       <Input
-        label="Nom du tag"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        label="Nom d'utilisateur"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         maxLength={100}
         required
         autoFocus

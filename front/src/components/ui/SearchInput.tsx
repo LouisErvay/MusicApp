@@ -1,4 +1,4 @@
-import { searchHint } from '../utils/search'
+import { searchHint } from '../../utils/search'
 import './SearchInput.css'
 
 interface SearchInputProps {

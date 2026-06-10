@@ -1,7 +1,7 @@
 import { useAudioPlayer } from '../player/AudioPlayerContext'
 import type { PlayerTrack } from '../player/types'
 import type { Song } from '../types'
-import { IconButton } from './IconButton'
+import { IconButton } from './ui/IconButton'
 
 function PlayIcon() {
   return (

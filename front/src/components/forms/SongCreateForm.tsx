@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react'
-import { listArtists } from '../api/artists'
-import { listTags } from '../api/tags'
-import { nameWithoutExtension } from '../utils/fileName'
-import { Button } from './Button'
-import { Input } from './Input'
-import { StringListInput } from './StringListInput'
+import { listArtists } from '../../api/artists'
+import { listTags } from '../../api/tags'
+import { nameWithoutExtension } from '../../utils/fileName'
+import { Button } from '../ui/Button'
+import { Input } from '../ui/Input'
+import { StringListInput } from '../StringListInput'
 import './SongCreateForm.css'
 
 export interface SongCreateEntry {

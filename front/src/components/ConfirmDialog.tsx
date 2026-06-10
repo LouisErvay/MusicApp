@@ -1,5 +1,5 @@
-import { Button } from './Button'
-import { Modal } from './Modal'
+import { Button } from './ui/Button'
+import { Modal } from './ui/Modal'
 
 interface ConfirmDialogProps {
   open: boolean

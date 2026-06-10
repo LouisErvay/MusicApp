@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { resolveSearchQuery } from '../utils/search'
-import { IconButton } from './IconButton'
+import { useDebouncedValue } from '../../hooks/useDebouncedValue'
+import { resolveSearchQuery } from '../../utils/search'
+import { IconButton } from '../ui/IconButton'
 import './TableColumnFilterHeader.css'
 
 export interface EntityFilterOption {

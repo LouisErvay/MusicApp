@@ -1,4 +1,4 @@
-import { SearchInput } from './SearchInput'
+import { SearchInput } from './ui/SearchInput'
 import './FilterCheckboxList.css'
 
 export interface FilterItem {

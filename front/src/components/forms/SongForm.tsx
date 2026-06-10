@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listArtists } from '../api/artists'
-import { listTags } from '../api/tags'
-import { Button } from './Button'
-import { FileInput, Input } from './Input'
-import { StringListInput } from './StringListInput'
+import { listArtists } from '../../api/artists'
+import { listTags } from '../../api/tags'
+import { Button } from '../ui/Button'
+import { FileInput, Input } from '../ui/Input'
+import { StringListInput } from '../StringListInput'
 
 export interface SongFormSubmitPayload {
   name: string

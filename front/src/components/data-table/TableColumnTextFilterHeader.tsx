@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconButton } from './IconButton'
+import { IconButton } from '../ui/IconButton'
 import './TableColumnFilterHeader.css'
 
 function SearchIcon() {
