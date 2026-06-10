@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { fileDownloadUrl } from '../api/config'
+import { fileDownloadUrl } from '../../api/config'
 import type { PlayOptions, PlaybackRate, PlayerTrack } from './types'
 import { PLAYBACK_RATES } from './types'
 

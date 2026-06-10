@@ -117,7 +117,7 @@ export function TagsPage() {
       {
         key: 'name',
         header: 'Nom',
-        render: (row) => <span className="tag-badge">{row.name}</span>,
+        render: (row) => <span className="chip tag-badge">{row.name}</span>,
       },
       {
         key: 'updated',

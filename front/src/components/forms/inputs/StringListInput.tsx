@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { resolveSearchQuery } from '../utils/search'
-import { SearchInput } from './ui/SearchInput'
+import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
+import { resolveSearchQuery } from '../../../utils/search'
+import { SearchInput } from '../../ui/SearchInput'
 import './StringListInput.css'
 
 interface StringListInputProps {
@@ -91,7 +91,7 @@ export function StringListInput({
       <span className="string-list__label">{label}</span>
       <div className="string-list__box">
         {values.map((value, index) => (
-          <span key={`${value}-${index}`} className="string-list__chip">
+          <span key={`${value}-${index}`} className="chip">
             {value}
             <button
               type="button"

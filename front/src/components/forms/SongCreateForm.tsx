@@ -4,7 +4,7 @@ import { listTags } from '../../api/tags'
 import { nameWithoutExtension } from '../../utils/fileName'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { StringListInput } from '../StringListInput'
+import { StringListInput } from './inputs/StringListInput'
 import './SongCreateForm.css'
 
 export interface SongCreateEntry {

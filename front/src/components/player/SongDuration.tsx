@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { fileDownloadUrl } from '../api/config'
-import { formatDuration } from '../utils/format'
+import { fileDownloadUrl } from '../../api/config'
+import { formatDuration } from '../../utils/format'
 
 const durationCache = new Map<string, number>()
 

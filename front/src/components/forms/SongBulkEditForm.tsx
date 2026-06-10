@@ -2,9 +2,9 @@ import { useCallback, useState } from 'react'
 import { listArtists } from '../../api/artists'
 import { listTags } from '../../api/tags'
 import { Button } from '../ui/Button'
-import { EntityIdListInput } from '../EntityIdListInput'
-import { StringListInput } from '../StringListInput'
-import type { EntityFilterOption } from './TableColumnEntityFilterHeader'
+import type { EntityFilterOption } from '../data-table/TableColumnEntityFilterHeader'
+import { EntityIdListInput } from './inputs/EntityIdListInput'
+import { StringListInput } from './inputs/StringListInput'
 
 export interface SongBulkEditSubmitPayload {
   artist_add?: string[]

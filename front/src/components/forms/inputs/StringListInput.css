@@ -29,19 +29,6 @@
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
-.string-list__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
-  color: var(--accent);
-  font-size: 0.82rem;
-  font-weight: 500;
-}
-
 .string-list__remove {
   display: inline-flex;
   align-items: center;

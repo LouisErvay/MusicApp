@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { resolveSearchQuery } from '../utils/search'
-import type { EntityFilterOption } from './TableColumnEntityFilterHeader'
+import { useDebouncedValue } from '../../../hooks/useDebouncedValue'
+import { resolveSearchQuery } from '../../../utils/search'
+import type { EntityFilterOption } from '../../data-table/TableColumnEntityFilterHeader'
 import './StringListInput.css'
 
 interface EntityIdListInputProps {
@@ -74,7 +74,7 @@ export function EntityIdListInput({
       <span className="string-list__label">{label}</span>
       <div className="string-list__box">
         {selectedLabels.map((value, index) => (
-          <span key={`${selectedIds[index]}-${value}`} className="string-list__chip">
+          <span key={`${selectedIds[index]}-${value}`} className="chip">
             {value}
             <button
               type="button"

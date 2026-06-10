@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { Layout } from './components/Layout'
-import { AudioPlayerProvider } from './player/AudioPlayerContext'
+import { Layout } from './components/layout/Layout'
+import { AudioPlayerProvider } from './components/player/AudioPlayerContext'
 import { ArtistsPage } from './pages/ArtistsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { SongsPage } from './pages/SongsPage'

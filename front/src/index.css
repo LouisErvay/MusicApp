@@ -156,12 +156,28 @@ h3 {
   max-width: 360px;
 }
 
-  display: inline-block;
-  padding: 0.2rem 0.65rem;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
   border-radius: 999px;
   background: var(--accent-bg);
   border: 1px solid var(--accent-border);
   color: var(--accent);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
+}
+
+.tag-badge {
+  padding: 0.2rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
 }

@@ -3,7 +3,7 @@ import { listArtists } from '../../api/artists'
 import { listTags } from '../../api/tags'
 import { Button } from '../ui/Button'
 import { FileInput, Input } from '../ui/Input'
-import { StringListInput } from '../StringListInput'
+import { StringListInput } from './inputs/StringListInput'
 
 export interface SongFormSubmitPayload {
   name: string
