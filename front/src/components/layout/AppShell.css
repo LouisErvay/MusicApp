@@ -1,0 +1,82 @@
+.app-shell {
+  --app-sidebar-width: 240px;
+  --app-shell-content-padding-block: 1.75rem;
+  --app-shell-content-padding-inline: 2rem;
+  --app-shell-content-toggle-inset: 0px;
+
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-panel {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
+}
+
+.app-shell--resizing .sidebar-panel {
+  transition: none;
+}
+
+.sidebar-panel__resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 5;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sidebar-panel__resize-handle::after {
+  content: '';
+  position: absolute;
+  inset: 0 -3px;
+}
+
+.sidebar-panel__resize-handle:hover,
+.app-shell--resizing .sidebar-panel__resize-handle {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.app-shell__content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--app-shell-content-padding-block)
+    var(--app-shell-content-padding-inline);
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    --app-shell-content-padding-block: 1.25rem;
+    --app-shell-content-padding-inline: 1rem;
+
+    flex-direction: column;
+  }
+
+  .sidebar-panel {
+    width: 100% !important;
+    height: auto;
+    flex: 0 0 auto;
+    transition: none;
+  }
+
+  .app-shell--sidebar-collapsed .sidebar-panel {
+    display: none;
+  }
+
+  .sidebar-panel__resize-handle {
+    display: none;
+  }
+}

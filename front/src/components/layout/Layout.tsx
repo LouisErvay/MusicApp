@@ -1,14 +1,11 @@
 import { Outlet } from 'react-router-dom'
+import { AppShell } from './AppShell'
 import { Sidebar } from './Sidebar'
-import './Layout.css'
 
 export function Layout() {
   return (
-    <div className="layout">
-      <Sidebar />
-      <main className="layout__main">
-        <Outlet />
-      </main>
-    </div>
+    <AppShell sidebar={<Sidebar />}>
+      <Outlet />
+    </AppShell>
   )
 }

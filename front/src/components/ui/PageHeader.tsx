@@ -10,7 +10,7 @@ interface PageHeaderProps {
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
     <header className="page-header">
-      <div>
+      <div className="page-header__heading">
         <h1 className="page-header__title">{title}</h1>
         {description ? <p className="page-header__desc">{description}</p> : null}
       </div>

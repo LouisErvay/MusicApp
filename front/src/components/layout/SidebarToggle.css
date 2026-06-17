@@ -1,0 +1,41 @@
+.sidebar-toggle {
+  position: absolute;
+  z-index: 20;
+  top: var(--app-shell-content-padding-block, 1.75rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-h);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.sidebar-toggle:hover {
+  background: var(--surface-2);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.sidebar-toggle__icon {
+  font-size: 1.35rem;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.app-shell--resizing .sidebar-toggle {
+  transition: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    top: var(--app-shell-content-padding-block, 1.25rem);
+  }
+}
