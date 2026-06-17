@@ -1,0 +1,119 @@
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  padding: 1.25rem 0.85rem 0;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 1.5rem;
+}
+
+.sidebar__brand strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--text-h);
+}
+
+.sidebar__subtitle {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+.sidebar__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0.75rem;
+}
+
+.sidebar__player {
+  flex: 0 0 25%;
+  min-height: 10rem;
+  max-height: 25%;
+  margin: 0 -0.85rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar__link:hover {
+  background: var(--surface-2);
+  color: var(--text-h);
+}
+
+.sidebar__link--active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.sidebar__icon {
+  width: 1.25rem;
+  text-align: center;
+  opacity: 0.85;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 0.75rem 0;
+    gap: 0.5rem;
+    overflow-x: auto;
+  }
+
+  .sidebar__player {
+    flex: 0 0 auto;
+    max-height: none;
+    margin: 0;
+  }
+
+  .sidebar__brand {
+    padding: 0 0.5rem 0 0;
+    border-right: 1px solid var(--border);
+    margin-right: 0.25rem;
+  }
+
+  .sidebar__nav {
+    flex-direction: row;
+    flex: 1;
+  }
+}
